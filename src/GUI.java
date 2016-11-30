@@ -7,11 +7,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
@@ -30,7 +32,10 @@ public class GUI extends Application{
 	private double rAngle;
 	private double mAccelH;
 	
-	private double pAccel;
+	protected double pAccel;
+	protected static double pAccelx;
+	protected static double pAccely;
+
 	private int isKinetic = 0;
 	
 	private String[] mUnits = {"kg", "N"};
@@ -44,12 +49,18 @@ public class GUI extends Application{
 	
 	private int massIndex = 0;
 	private int massIndex1 = 0;
-	private double botLeftx;
-	private double botLefty;
+	private static double botLeftx;
+	private static double botLefty;
 	private double topRightx;
 	private double topRighty;
 
-	private Polygon massRect1;
+	private double pConvert;
+
+	protected static double pVelx;
+	protected static double pVely;
+
+
+	private static Polygon massRect1;
 	private Polygon massRect2;
 
 	private boolean hasDrawn = false;
@@ -64,6 +75,8 @@ public class GUI extends Application{
 
 	@Override
 	public void start(final Stage primaryStage) throws Exception {
+
+		final Thread t = new Thread(new Animator());
 		
 		group = new Group();
 		group.setStyle("-fx-background-color :#D3D3D3;");
@@ -92,7 +105,7 @@ public class GUI extends Application{
 					drawRamp(primaryStage);
 					drawBox();
 					if(calculateAcc() != 0){
-
+						t.start();
 					}
 
 				}
@@ -145,7 +158,7 @@ public class GUI extends Application{
 		length.setPromptText("meters");
 		
 		ObservableList<String> optionsFriction = FXCollections.observableArrayList ("Fr\u2096", "Fr\u209B");
-		
+
 		final ComboBox<String> frictionCombo = new ComboBox<String>(optionsFriction);
 		frictionCombo.setValue("Fr\u2096");
 		
@@ -265,7 +278,7 @@ public class GUI extends Application{
 		
 			double mWidth = (int) (mLength*Math.cos(rAngle));
 			System.out.println("Width" + mWidth + " Angle" + rAngle);
-			double pConvert = 600/mWidth;
+			pConvert = 600/mWidth;
 				
 			double mHeight = (int)(mLength*Math.sin(rAngle));
 			pHeight = mHeight*pConvert;
@@ -281,7 +294,7 @@ public class GUI extends Application{
 		}
 		else{
 			int mHeight = (int)(mLength*Math.sin(rAngle));
-			double pConvert = (botLefty-200)/mHeight;
+			pConvert = (botLefty-200)/mHeight;
 			
 			double mWidth = (int)(mLength*Math.cos(rAngle));
 			double pWidth = mWidth*pConvert;
@@ -317,6 +330,9 @@ public class GUI extends Application{
 	
 	private double calculateAcc(){
 		mAccelH = (mAccelG*Math.sin(rAngle))-(uFrk*mAccelG*Math.cos(rAngle));
+		pAccel = mAccelH*pConvert;
+		pAccelx = pAccel*Math.cos(rAngle);
+		pAccely = pAccel*Math.sin(rAngle);
 		return mAccelH;
 	}
 
@@ -345,9 +361,35 @@ public class GUI extends Application{
 
 		group.getChildren().add(massRect1);
 
-
-
+		System.out.println(String.valueOf(massRect1.getScaleX()));
+		System.out.println(String.valueOf(massRect1.localToScene(massRect1.getLayoutBounds())));
 	}
+
+	public double getMinBoxX(){return massRect1.localToScene(massRect1.getLayoutBounds()).getMinX();}
+
+	public double getMaxBoxX(){return massRect1.localToScene(massRect1.getLayoutBounds()).getMaxX();}
+
+	public static double getMinBoxY(){return massRect1.localToScene(massRect1.getLayoutBounds()).getMinY();}
+
+	public static double getMaxBoxY(){return massRect1.localToScene(massRect1.getLayoutBounds()).getMaxY();}
+
+	public static double getBotLeftY(){return botLefty;}
+
+	public static void moveRect1X(double deltaX){
+		massRect1.setLayoutX(massRect1.getLayoutX()+deltaX);
+	}
+
+	public static void moveRect1Y(double deltaY){
+		massRect1.setLayoutY(massRect1.getLayoutY()+deltaY);
+	}
+
+	public static void restart(){
+		pVelx = 0;
+		pVely = 0;
+		pAccelx = 0;
+		pAccely = 0;
+	}
+
 	
 	
 
