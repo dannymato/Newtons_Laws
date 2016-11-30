@@ -26,8 +26,7 @@ public class Animator implements Runnable{
 
         }
 
-
-
+        GUI.restart();
     }
 
 }

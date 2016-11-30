@@ -54,7 +54,7 @@ public class GUI extends Application{
 	private double topRightx;
 	private double topRighty;
 
-	private double pConvert;
+	private static double pConvert;
 
 	protected static double pVelx;
 	protected static double pVely;
@@ -64,10 +64,13 @@ public class GUI extends Application{
 	private Polygon massRect2;
 
 	private boolean hasDrawn = false;
-	
+	private boolean isPulley = false;
+
 	private Group group;
 	
-	private Polygon plane = new Polygon();
+	private Polygon plane;
+
+	private ImageView newton;
 	
 	public static void main(String[] args){
 		launch(args);
@@ -75,8 +78,6 @@ public class GUI extends Application{
 
 	@Override
 	public void start(final Stage primaryStage) throws Exception {
-
-		final Thread t = new Thread(new Animator());
 		
 		group = new Group();
 		group.setStyle("-fx-background-color :#D3D3D3;");
@@ -86,25 +87,34 @@ public class GUI extends Application{
 		grid.setHgap(10);
 		grid.setVgap(10);
 		grid.setPadding(new Insets(25,25,25,25));
-		
+
+		newton = new ImageView(new Image(Main.class.getResourceAsStream("Newton.jpg")));
+		newton.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
+
 		primaryStage.setTitle("Newton's Laws");
 		
 		mass1 = new TextField();
-		
-		mass2 = new TextField();
-		
 		mass1.setPromptText("kg");
-		mass2.setPromptText("kg");
-		
+
+		if(isPulley) {
+			mass2 = new TextField();
+			mass2.setPromptText("kg");
+		}
 		Button btn = new Button();
 		btn.setText("Animate");
 		btn.setOnAction(new EventHandler<ActionEvent>(){
 			
 			public void handle(ActionEvent event){
+				if(hasDrawn){
+					group.getChildren().remove(massRect1);
+					group.getChildren().remove(plane);
+					restart();
+				}
 				if(startAnimation()){
 					drawRamp(primaryStage);
 					drawBox();
 					if(calculateAcc() != 0){
+						Thread t = new Thread(new Animator());
 						t.start();
 					}
 
@@ -124,20 +134,20 @@ public class GUI extends Application{
 					mass1.setPromptText(mUnits[massIndex]);
 				}
 		});
-		
-		
-		ObservableList<String> options1 = FXCollections.observableArrayList ("Mass 2", "Weight 2");
-		
+		ObservableList<String> options1 = FXCollections.observableArrayList("Mass 2", "Weight 2");
 		final ComboBox<String> massCombo1 = new ComboBox<String>(options1);
-		massCombo1.setValue("Mass 2");
-		
-		massCombo1.setOnAction(new EventHandler<ActionEvent>(){
-			
-			public void handle(ActionEvent event){
-				massIndex1 = massCombo1.getSelectionModel().getSelectedIndex();
-				mass2.setPromptText(mUnits[massIndex1]);
-			}
-		});	
+		if(isPulley) {
+
+			massCombo1.setValue("Mass 2");
+
+			massCombo1.setOnAction(new EventHandler<ActionEvent>() {
+
+				public void handle(ActionEvent event) {
+					massIndex1 = massCombo1.getSelectionModel().getSelectedIndex();
+					mass2.setPromptText(mUnits[massIndex1]);
+				}
+			});
+		}
 		
 		accel = new TextField();
 		accel.setPromptText("m/s\u00b2");
@@ -170,20 +180,35 @@ public class GUI extends Application{
 		
 		friction = new TextField();
 		
-		grid.add(mass1, 1, 0);
-		grid.add(massCombo, 0, 0);
-		grid.add(mass2, 1, 1);
-		grid.add(massCombo1, 0, 1);
-		grid.add(accel, 1, 2);
-		grid.add(tAccel, 0, 2);
-		grid.add(tAngle, 0, 3);
-		grid.add(angle, 1, 3);
-		grid.add(tLength, 0, 4);
-		grid.add(length, 1, 4);
-		grid.add(frictionCombo, 0, 5);
-		grid.add(friction, 1, 5);
-		grid.add(btn, 1, 6);
-	
+		grid.add(mass1, 1, 3);
+		grid.add(massCombo, 0, 3);
+		if(isPulley) {
+			grid.add(mass2, 1, 4);
+			grid.add(massCombo1, 0, 4);
+			grid.add(accel, 1, 5);
+			grid.add(tAccel, 0, 5);
+			grid.add(tAngle, 0, 6);
+			grid.add(angle, 1, 6);
+			grid.add(tLength, 0, 7);
+			grid.add(length, 1, 7);
+			grid.add(frictionCombo, 0, 8);
+			grid.add(friction, 1, 8);
+			grid.add(btn, 1, 9);
+		}
+		else{
+			grid.add(accel, 1, 4);
+			grid.add(tAccel, 0, 4);
+			grid.add(tAngle, 0, 5);
+			grid.add(angle, 1, 5);
+			grid.add(tLength, 0, 6);
+			grid.add(length, 1, 6);
+			grid.add(frictionCombo, 0, 7);
+			grid.add(friction, 1, 7);
+			grid.add(btn, 1, 8);
+		}
+
+		grid.add(newton,0,0,2,3);
+
 		group.getChildren().add(grid);
 		
 		primaryStage.setScene(new Scene(group, 1280,1024));
@@ -196,7 +221,11 @@ public class GUI extends Application{
 		String temp;
 		
 		temp = accel.getText();
-		if(!temp.equals("")){
+		if(temp.equals("delrio")) {
+			newton.setImage(new Image(Main.class.getResourceAsStream("Delrio.jpg")));
+			return false;
+		}
+		else if(!temp.equals("")) {
 			mAccelG = Double.parseDouble(temp);
 			mAccelG = Math.abs(mAccelG);
 			temp = "";
@@ -214,17 +243,17 @@ public class GUI extends Application{
 		}
 		else
 			return false;
-		
-		temp = mass2.getText();
-		if(!temp.equals("")){
-			mWeight2 = Double.parseDouble(temp);
-			if(massIndex == 0){
-				mWeight2 = mWeight2*mAccelG;
-			}
-			temp = "";
+		if(isPulley) {
+			temp = mass2.getText();
+			if (!temp.equals("")) {
+				mWeight2 = Double.parseDouble(temp);
+				if (massIndex == 0) {
+					mWeight2 = mWeight2 * mAccelG;
+				}
+				temp = "";
+			} else
+				return false;
 		}
-		else
-			return false;
 		
 		temp = friction.getText();
 		if(!temp.equals("")){
@@ -273,6 +302,8 @@ public class GUI extends Application{
 		botLefty = (int)(windowH*.8);
 		
 		double pHeight;
+
+		plane = new Polygon();
 		
 		if(dAngle < 45){
 		
@@ -333,7 +364,11 @@ public class GUI extends Application{
 		pAccel = mAccelH*pConvert;
 		pAccelx = pAccel*Math.cos(rAngle);
 		pAccely = pAccel*Math.sin(rAngle);
-		return mAccelH;
+
+		if(mAccelH < 0)
+			return 0;
+		else
+			return mAccelH;
 	}
 
 	private void drawBox(){
@@ -388,6 +423,7 @@ public class GUI extends Application{
 		pVely = 0;
 		pAccelx = 0;
 		pAccely = 0;
+		pConvert = 0;
 	}
 
 	
