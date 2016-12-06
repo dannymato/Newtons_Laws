@@ -7,7 +7,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -29,10 +28,11 @@ public class GUI extends Application{
 	private double uFrk;
 	private double uFrs;
 	private double dAngle;
-	private double rAngle;
+	protected static double rAngle;
 	private double mAccelH;
+	public static int mSecs;
 	
-	protected double pAccel;
+	protected static double pAccel;
 	protected static double pAccelx;
 	protected static double pAccely;
 
@@ -46,6 +46,8 @@ public class GUI extends Application{
 	private TextField angle;
 	private TextField length;
 	private TextField friction;
+
+	private static Label timeField;
 	
 	private int massIndex = 0;
 	private int massIndex1 = 0;
@@ -66,11 +68,13 @@ public class GUI extends Application{
 	private boolean hasDrawn = false;
 	private boolean isPulley = false;
 
-	private Group group;
+	private static Group group;
 	
 	private Polygon plane;
 
 	private ImageView newton;
+
+	protected static final int tickRate = 60;
 	
 	public static void main(String[] args){
 		launch(args);
@@ -111,11 +115,19 @@ public class GUI extends Application{
 					restart();
 				}
 				if(startAnimation()){
+					Thread t = new Thread(new Animator());
+					Thread time = new Thread(new TimeCount());
+					if(hasDrawn) {
+						if (getMaxBoxY() <= getBotLeftY())
+							t.interrupt();
+
+					}
 					drawRamp(primaryStage);
 					drawBox();
 					if(calculateAcc() != 0){
-						Thread t = new Thread(new Animator());
+
 						t.start();
+						time.start();
 					}
 
 				}
@@ -124,7 +136,7 @@ public class GUI extends Application{
 		
 		ObservableList<String> options = FXCollections.observableArrayList ("Mass 1", "Weight 1");
 		
-		final ComboBox<String> massCombo = new ComboBox<String>(options);
+		final ComboBox<String> massCombo = new ComboBox<>(options);
 		massCombo.setValue("Mass 1");
 		
 		massCombo.setOnAction(new EventHandler<ActionEvent>(){
@@ -135,7 +147,7 @@ public class GUI extends Application{
 				}
 		});
 		ObservableList<String> options1 = FXCollections.observableArrayList("Mass 2", "Weight 2");
-		final ComboBox<String> massCombo1 = new ComboBox<String>(options1);
+		final ComboBox<String> massCombo1 = new ComboBox<>(options1);
 		if(isPulley) {
 
 			massCombo1.setValue("Mass 2");
@@ -169,7 +181,7 @@ public class GUI extends Application{
 		
 		ObservableList<String> optionsFriction = FXCollections.observableArrayList ("Fr\u2096", "Fr\u209B");
 
-		final ComboBox<String> frictionCombo = new ComboBox<String>(optionsFriction);
+		final ComboBox<String> frictionCombo = new ComboBox<>(optionsFriction);
 		frictionCombo.setValue("Fr\u2096");
 		
 		frictionCombo.setOnAction(new EventHandler<ActionEvent>() {
@@ -179,6 +191,8 @@ public class GUI extends Application{
 		});
 		
 		friction = new TextField();
+
+		timeField = new Label();
 		
 		grid.add(mass1, 1, 3);
 		grid.add(massCombo, 0, 3);
@@ -194,6 +208,7 @@ public class GUI extends Application{
 			grid.add(frictionCombo, 0, 8);
 			grid.add(friction, 1, 8);
 			grid.add(btn, 1, 9);
+			grid.add(timeField,1,10);
 		}
 		else{
 			grid.add(accel, 1, 4);
@@ -205,6 +220,7 @@ public class GUI extends Application{
 			grid.add(frictionCombo, 0, 7);
 			grid.add(friction, 1, 7);
 			grid.add(btn, 1, 8);
+			grid.add(timeField,1,9);
 		}
 
 		grid.add(newton,0,0,2,3);
@@ -271,6 +287,9 @@ public class GUI extends Application{
 		temp = angle.getText();
 		if(!temp.equals("")){
 			dAngle = Double.parseDouble(temp);
+			if(dAngle > 90) {
+				return false;
+			}
 			rAngle = (dAngle*Math.PI)/180;
 			temp = "";
 		}
@@ -371,7 +390,7 @@ public class GUI extends Application{
 			return mAccelH;
 	}
 
-	private void drawBox(){
+	private void drawBox() {
 
 		double rBotLeftx;
 		double rBotLefty;
@@ -380,11 +399,11 @@ public class GUI extends Application{
 		double boxWidth = 100;
 
 		massRect1 = new Polygon();
-		massRect1.getPoints().addAll(new Double[]{
-		/*bot Right*/ topRightx,topRighty,
-		/*bot left*/  rBotLeftx = topRightx-(boxWidth*Math.cos(rAngle)),rBotLefty = topRighty + (boxWidth*Math.sin(rAngle)),
-		/*top left*/  rBotLeftx - (boxHeight*Math.sin(rAngle)), rBotLefty - (boxHeight*Math.cos(rAngle)),
-		/*top right*/ topRightx - (boxHeight*Math.sin(rAngle)), topRighty - (boxHeight*Math.cos(rAngle))
+		massRect1.getPoints().addAll(new Double[] {
+		/*bot Right*/ topRightx, topRighty,
+		/*bot left*/  rBotLeftx = topRightx - (boxWidth * Math.cos(rAngle)), rBotLefty = topRighty + (boxWidth * Math.sin(rAngle)),
+		/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
+		/*top right*/ topRightx - (boxHeight * Math.sin(rAngle)), topRighty - (boxHeight * Math.cos(rAngle))
 				}
 		);
 
@@ -398,6 +417,7 @@ public class GUI extends Application{
 
 		System.out.println(String.valueOf(massRect1.getScaleX()));
 		System.out.println(String.valueOf(massRect1.localToScene(massRect1.getLayoutBounds())));
+
 	}
 
 	public double getMinBoxX(){return massRect1.localToScene(massRect1.getLayoutBounds()).getMinX();}
@@ -424,6 +444,13 @@ public class GUI extends Application{
 		pAccelx = 0;
 		pAccely = 0;
 		pConvert = 0;
+		mSecs = 0;
+		timeField.setText("");
+	}
+
+	public static void showTime(){
+		System.out.println(mSecs);
+		timeField.setText("Time = " + String.format("%.2f",mSecs/1000.0) + " s");
 	}
 
 	

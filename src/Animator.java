@@ -1,3 +1,5 @@
+import javafx.application.Platform;
+
 /**
  * Created by danny on 11/30/16.
  */
@@ -9,24 +11,32 @@ public class Animator implements Runnable{
 
         while(GUI.getMaxBoxY() <= GUI.getBotLeftY()){
 
-            GUI.pVelx -= (GUI.pAccelx/60);
+        	int tickRate = GUI.tickRate;
 
-            GUI.moveRect1X(GUI.pVelx/60);
+            GUI.pVelx -= ((GUI.pAccel*Math.cos(GUI.rAngle))/tickRate);
 
-            GUI.pVely += (GUI.pAccely/60);
+            GUI.moveRect1X(GUI.pVelx/tickRate);
 
-            GUI.moveRect1Y(GUI.pVely/60);
+            GUI.pVely += ((GUI.pAccel*Math.sin(GUI.rAngle))/tickRate);
+
+            GUI.moveRect1Y(GUI.pVely/tickRate);
 
             try {
-                Thread.sleep(1000/60);
+                Thread.sleep(1000/tickRate);
             }
             catch (InterruptedException e){
                 Thread.currentThread().interrupt();
             }
 
+
         }
 
-        GUI.restart();
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				GUI.showTime();
+			}
+		});
     }
 
 }
