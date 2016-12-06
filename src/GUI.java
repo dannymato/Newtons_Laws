@@ -16,6 +16,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
 
@@ -47,6 +48,8 @@ public class GUI extends Application{
 	private TextField length;
 	private TextField friction;
 
+	private Button clear;
+
 	private static Label timeField;
 	
 	private int massIndex = 0;
@@ -75,7 +78,10 @@ public class GUI extends Application{
 	private ImageView newton;
 
 	protected static final int tickRate = 60;
-	
+
+	private static final double boxHeight = 100;
+	private static final double boxWidth = 100;
+
 	public static void main(String[] args){
 		launch(args);
 	}
@@ -193,6 +199,26 @@ public class GUI extends Application{
 		friction = new TextField();
 
 		timeField = new Label();
+
+		clear = new Button("Clear");
+		clear.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent actionEvent) {
+				restart();
+				length.setText("");
+				friction.setText("");
+				angle.setText("");
+				accel.setText("");
+				mass1.setText("");
+				group.getChildren().remove(massRect1);
+				if(isPulley) {
+					mass2.setText("");
+					group.getChildren().remove(massRect2);
+				}
+				group.getChildren().remove(plane);
+				newton.setImage(new Image(Main.class.getResourceAsStream("Newton.jpg")));
+			}
+		});
 		
 		grid.add(mass1, 1, 3);
 		grid.add(massCombo, 0, 3);
@@ -209,6 +235,7 @@ public class GUI extends Application{
 			grid.add(friction, 1, 8);
 			grid.add(btn, 1, 9);
 			grid.add(timeField,1,10);
+			grid.add(clear,0,9);
 		}
 		else{
 			grid.add(accel, 1, 4);
@@ -221,6 +248,7 @@ public class GUI extends Application{
 			grid.add(friction, 1, 7);
 			grid.add(btn, 1, 8);
 			grid.add(timeField,1,9);
+			grid.add(clear,0,8);
 		}
 
 		grid.add(newton,0,0,2,3);
@@ -237,9 +265,10 @@ public class GUI extends Application{
 		String temp;
 		
 		temp = accel.getText();
-		if(temp.equals("delrio")) {
+		if(temp.equalsIgnoreCase("delrio")) {
 			newton.setImage(new Image(Main.class.getResourceAsStream("Delrio.jpg")));
-			return false;
+			timeField.setText("\"Before they discovered the strong force, they didn't know about the strong force\""+
+								"\n\t\t-Delrio");
 		}
 		else if(!temp.equals("")) {
 			mAccelG = Double.parseDouble(temp);
@@ -395,9 +424,6 @@ public class GUI extends Application{
 		double rBotLeftx;
 		double rBotLefty;
 
-		double boxHeight = 100;
-		double boxWidth = 100;
-
 		massRect1 = new Polygon();
 		massRect1.getPoints().addAll(new Double[] {
 		/*bot Right*/ topRightx, topRighty,
@@ -453,6 +479,25 @@ public class GUI extends Application{
 		timeField.setText("Time = " + String.format("%.2f",mSecs/1000.0) + " s");
 	}
 
+	public static void showVectors(){
+
+		Line gravityV = new Line();
+		double startX = botLeftx+
+				((boxWidth/2)*Math.cos(rAngle));
+
+		double startY = botLefty -
+				((boxWidth/2)*Math.sin(rAngle));
+		gravityV.setStartX(startX);
+		gravityV.setEndX(startX);
+		gravityV.setStartY(startY);
+		gravityV.setEndY(startY+50);
+		gravityV.setStroke(Color.RED);
+		gravityV.setStrokeWidth(5);
+
+		group.getChildren().add(gravityV);
+
+		System.out.println(gravityV.getStartX() + "\n" + gravityV.getStartY());
+	}
 	
 	
 

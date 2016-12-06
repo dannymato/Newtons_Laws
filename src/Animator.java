@@ -35,8 +35,10 @@ public class Animator implements Runnable{
 			@Override
 			public void run() {
 				GUI.showTime();
+				GUI.showVectors();
 			}
 		});
+
     }
 
 }
