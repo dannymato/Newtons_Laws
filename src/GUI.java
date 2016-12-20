@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -13,11 +14,18 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 public class GUI extends Application{
 	
@@ -30,11 +38,11 @@ public class GUI extends Application{
 	private double dAngle;
 	protected static double rAngle;
 	private double mAccelH;
-	public static int mSecs;
+	public static volatile int mSecs;
 	
-	protected static double pAccel;
-	protected static double pAccelx;
-	protected static double pAccely;
+	protected static volatile double pAccel;
+	protected static volatile double pAccelx;
+	protected static volatile double pAccely;
 
 	private int isKinetic = 0;
 	
@@ -46,33 +54,48 @@ public class GUI extends Application{
 	private TextField angle;
 	private TextField length;
 	private TextField friction;
+	private TextField pulley;
 
 	private static Label timeField;
 	
 	private int massIndex = 0;
 	private int massIndex1 = 0;
+	private int heightIndex = 1;
 	private static double botLeftx;
 	private static double botLefty;
 	private double topRightx;
-	private double topRighty;
+	private static double topRighty;
+	private static double pulleyRadius = 50;
+	private static double pulleyCenterX;
+	private static double pulleyCenterY;
 
 	private static double pConvert;
 
-	protected static double pVelx;
-	protected static double pVely;
-
+	protected static volatile double pVelx;
+	protected static volatile double pVely;
+	protected static volatile double pVely2;
+	protected static volatile double box2y;
+	
+	protected static boolean neg = false;
 
 	private static Polygon massRect1;
-	private Polygon massRect2;
+	private static Polygon massRect2;
+	
+	private static Polygon rope1;
+	private static Polygon rope2;
 
 	private boolean hasDrawn = false;
-	private boolean isPulley = false;
+	public static boolean isPulley = false;
 
 	private static Group group;
 	
 	private Polygon plane;
+	
+	private Circle pulleyPlane;
 
 	private ImageView newton;
+	
+	private static Line line;
 
 	protected static final int tickRate = 60;
 	
@@ -83,14 +106,24 @@ public class GUI extends Application{
 	@Override
 	public void start(final Stage primaryStage) throws Exception {
 		
+		Image background = new Image(Main.class.getResourceAsStream("background.jpg"));
+		BackgroundImage myBI = new BackgroundImage(background, BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT,
+				BackgroundPosition.DEFAULT, BackgroundSize.DEFAULT);
+		
+		
 		group = new Group();
 		group.setStyle("-fx-background-color :#D3D3D3;");
+		
+		
+		
 		
 		GridPane grid = new GridPane();
 		grid.setAlignment(Pos.CENTER_LEFT);
 		grid.setHgap(10);
 		grid.setVgap(10);
 		grid.setPadding(new Insets(25,25,25,25));
+		
+		//grid.setBackground(new Background(myBI));
 
 		newton = new ImageView(new Image(Main.class.getResourceAsStream("Newton.jpg")));
 		newton.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
@@ -106,17 +139,23 @@ public class GUI extends Application{
 		}
 		Button btn = new Button();
 		btn.setText("Animate");
+		
+		Thread t = new Thread(new Animator());
+		Thread time = new Thread(new TimeCount());
 		btn.setOnAction(new EventHandler<ActionEvent>(){
 			
 			public void handle(ActionEvent event){
 				if(hasDrawn){
 					group.getChildren().remove(massRect1);
+					group.getChildren().remove(massRect2);
+					group.getChildren().remove(line);
 					group.getChildren().remove(plane);
+					group.getChildren().remove(pulleyPlane);
+					group.getChildren().remove(rope1);
+					group.getChildren().remove(rope2);
 					restart();
 				}
 				if(startAnimation()){
-					Thread t = new Thread(new Animator());
-					Thread time = new Thread(new TimeCount());
 					if(hasDrawn) {
 						if (getMaxBoxY() <= getBotLeftY())
 							t.interrupt();
@@ -190,13 +229,111 @@ public class GUI extends Application{
 			}
 		});
 		
+		ObservableList<String> optionsPulley = FXCollections.observableArrayList ("Pulley", "No Pulley");
+		
+		final ComboBox<String> pulleyCombo = new ComboBox<>(optionsPulley);
+		pulleyCombo.setValue("Pulley");
+		
+		pulleyCombo.setOnAction(new EventHandler<ActionEvent>() {
+			public void handle(ActionEvent event){
+				if(pulleyCombo.getValue().equals("Pulley")){
+					isPulley = true;
+				} else {
+					isPulley = false;
+					
+				}
+			}
+		});
+		
+		ObservableList<String> optionsStart = FXCollections.observableArrayList ("Top", "Middle", "Bottom");
+		
+		final ComboBox<String> boxCombo = new ComboBox<>(optionsStart);
+		boxCombo.setValue("Middle");
+		
+		boxCombo.setOnAction(new EventHandler<ActionEvent>() {
+			public void handle(ActionEvent event){
+				if(boxCombo.getValue().equals("Top")){
+					heightIndex = 0;
+				} else if(boxCombo.getValue().equals("Middle")){
+					heightIndex = 1;
+				} else {
+					heightIndex = 2;
+				}
+			}
+		});
+		
+		final Label pulleyField = new Label();
+		pulleyField.setText("Use a Pulley?");
+		
+		ObservableList<String> opIsPulley = FXCollections.observableArrayList ("Yes", "No");
+		
+		final ComboBox<String> comboPulley = new ComboBox<>(opIsPulley);
+		comboPulley.setValue("No");
+		
+		comboPulley.setOnAction(new EventHandler<ActionEvent>() {
+			public void handle(ActionEvent event){
+				if(comboPulley.getValue().equals("Yes")){
+					isPulley = true;
+					mass2 = new TextField();
+					mass2.setPromptText("kg");
+					grid.getChildren().clear();
+					grid.add(newton,0,0,2,3);
+					grid.add(mass1, 1, 3);
+					grid.add(massCombo, 0, 3);
+					grid.add(mass2, 1, 4);
+					grid.add(massCombo1, 0, 4);
+					grid.add(accel, 1, 5);
+					grid.add(tAccel, 0, 5);
+					grid.add(tAngle, 0, 6);
+					grid.add(angle, 1, 6);
+					grid.add(tLength, 0, 7);
+					grid.add(length, 1, 7);
+					grid.add(frictionCombo, 0, 8);
+					grid.add(friction, 1, 8);
+					//grid.add(pulleyCombo, 0, 9);
+					//grid.add(pulley, 1, 9);
+					grid.add(btn, 1, 9);
+					grid.add(timeField,1,10);
+					grid.add(boxCombo, 0, 11);
+					grid.add(pulleyField, 0, 12);
+					grid.add(comboPulley, 1, 12);
+				} else {
+					isPulley = false;
+					grid.getChildren().clear();
+					grid.add(newton,0,0,2,3);
+					grid.add(mass1, 1, 3);
+					grid.add(massCombo, 0, 3);
+					grid.add(accel, 1, 4);
+					grid.add(tAccel, 0, 4);
+					grid.add(tAngle, 0, 5);
+					grid.add(angle, 1, 5);
+					grid.add(tLength, 0, 6);
+					grid.add(length, 1, 6);
+					grid.add(frictionCombo, 0, 7);
+					grid.add(friction, 1, 7);
+					//grid.add(pulleyCombo, 0, 8);
+					//grid.add(pulley, 1, 8);
+					grid.add(btn, 1, 9);
+					grid.add(timeField,1,10);
+					grid.add(pulleyField, 0, 12);
+					grid.add(comboPulley, 1, 12);
+				}
+			}
+		});
+		
+		
+		
 		friction = new TextField();
 
 		timeField = new Label();
 		
-		grid.add(mass1, 1, 3);
-		grid.add(massCombo, 0, 3);
+		//pulley = new TextField();
+		
+		
 		if(isPulley) {
+			grid.add(newton,0,0,2,3);
+			grid.add(mass1, 1, 3);
+			grid.add(massCombo, 0, 3);
 			grid.add(mass2, 1, 4);
 			grid.add(massCombo1, 0, 4);
 			grid.add(accel, 1, 5);
@@ -207,10 +344,18 @@ public class GUI extends Application{
 			grid.add(length, 1, 7);
 			grid.add(frictionCombo, 0, 8);
 			grid.add(friction, 1, 8);
+			//grid.add(pulleyCombo, 0, 9);
+			//grid.add(pulley, 1, 9);
 			grid.add(btn, 1, 9);
 			grid.add(timeField,1,10);
+			grid.add(boxCombo, 0, 11);
+			grid.add(pulleyField, 0, 12);
+			grid.add(comboPulley, 1, 12);
 		}
 		else{
+			grid.add(newton,0,0,2,3);
+			grid.add(mass1, 1, 3);
+			grid.add(massCombo, 0, 3);
 			grid.add(accel, 1, 4);
 			grid.add(tAccel, 0, 4);
 			grid.add(tAngle, 0, 5);
@@ -219,11 +364,25 @@ public class GUI extends Application{
 			grid.add(length, 1, 6);
 			grid.add(frictionCombo, 0, 7);
 			grid.add(friction, 1, 7);
-			grid.add(btn, 1, 8);
-			grid.add(timeField,1,9);
+			//grid.add(pulleyCombo, 0, 8);
+			//grid.add(pulley, 1, 8);
+			grid.add(btn, 1, 9);
+			grid.add(timeField,1,10);
+			grid.add(pulleyField, 0, 12);
+			grid.add(comboPulley, 1, 12);
 		}
+		
+		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+			
+			public void handle(WindowEvent e){
+				Platform.exit();
+				t.interrupt();
+				time.interrupt();
+				
+			}
+		});
 
-		grid.add(newton,0,0,2,3);
+
 
 		group.getChildren().add(grid);
 		
@@ -304,7 +463,7 @@ public class GUI extends Application{
 		else
 			return false;
 		
-		System.out.println(mWeight1 + " " + mWeight2 + " " + uFrk + " " + uFrs + " " + mAccelG + " " + mLength + " " + dAngle + " " + rAngle);
+		//System.out.println(mWeight1 + " " + mWeight2 + " " + uFrk + " " + uFrs + " " + mAccelG + " " + mLength + " " + dAngle + " " + rAngle);
 		
 		return true;
 		
@@ -317,12 +476,16 @@ public class GUI extends Application{
 		
 		Image wood = new Image(Main.class.getResourceAsStream("wood_floor.jpg"));
 		
+		Image pulley = new Image(Main.class.getResourceAsStream("pulley.jpg"));
+		
 		botLeftx = windowW/2;
 		botLefty = (int)(windowH*.8);
 		
 		double pHeight;
 
 		plane = new Polygon();
+		
+		pulleyPlane = new Circle();
 		
 		if(dAngle < 45){
 		
@@ -341,6 +504,9 @@ public class GUI extends Application{
 
 			topRightx = botLeftx+600;
 			topRighty = botLefty-pHeight;
+			
+			pulleyCenterX = topRightx + pulleyRadius;
+			pulleyCenterY = topRighty - pulleyRadius;
 		}
 		else{
 			int mHeight = (int)(mLength*Math.sin(rAngle));
@@ -358,35 +524,59 @@ public class GUI extends Application{
 			topRightx = botLeftx + 600;
 			topRighty = 200.0;
 			
+			pulleyCenterX = topRightx + pulleyRadius;
+			pulleyCenterY = topRighty - pulleyRadius;
+			
 		}
 		
 		plane.setStroke(Color.BLACK);
 		
 		plane.setFill(new ImagePattern(wood,0,0,2,2,true));
 		
+		pulleyPlane.setStroke(Color.BLACK);
+		
+		pulleyPlane.setFill(new ImagePattern(pulley));
+		
+		if(isPulley){
+			pulleyPlane.setCenterX(pulleyCenterX);
+			pulleyPlane.setCenterY(pulleyCenterY);
+			pulleyPlane.setRadius(pulleyRadius);
+		}
+		
 		System.out.println(hasDrawn);
 		
 		if(!hasDrawn){
 			group.getChildren().add(plane);
+			group.getChildren().add(pulleyPlane);
 			hasDrawn = true;
 		}
 		else{
 			group.getChildren().remove(plane);
 			group.getChildren().add(plane);
+			group.getChildren().remove(pulleyPlane);
+			group.getChildren().add(pulleyPlane);
 		}
+		
 		
 		
 	}
 	
 	private double calculateAcc(){
+		if(!isPulley){
 		mAccelH = (mAccelG*Math.sin(rAngle))-(uFrk*mAccelG*Math.cos(rAngle));
+		} else {
+			mAccelH = ((mWeight1*Math.sin(rAngle))-mWeight2-(uFrk*mWeight1*Math.cos(rAngle)))/((mWeight1+mWeight2)/mAccelG);
+		}
 		pAccel = mAccelH*pConvert;
 		pAccelx = pAccel*Math.cos(rAngle);
 		pAccely = pAccel*Math.sin(rAngle);
 
-		if(mAccelH < 0)
-			return 0;
-		else
+		
+		if(!isPulley){
+			if(mAccelH < 0)
+				return 0;
+		}
+		//else
 			return mAccelH;
 	}
 
@@ -394,29 +584,155 @@ public class GUI extends Application{
 
 		double rBotLeftx;
 		double rBotLefty;
+		
+		double rBotLeftx2;
+		double rBotLefty2;
 
 		double boxHeight = 100;
 		double boxWidth = 100;
+		
+		double ropeBotLeftx;
+		double ropeBotLefty;
+		
+		double ropeHeight = 5;
+		
+		box2y = 0;
+		
+		if(heightIndex == 0){
+			box2y = topRighty;
+		} else if(heightIndex == 1){
+			box2y = topRighty + ((0.5)*(botLefty - topRighty));
+		} else {
+			box2y = botLefty - 100;
+		}
+		if((box2y + 100) > botLefty){
+			box2y = botLefty + 100;
+		}
+		
+		double ropeStartX = pulleyPlane.getCenterX();
+		double ropeStartY = pulleyPlane.getCenterY();
+		
+		if(!isPulley){
+			massRect1 = new Polygon();
+			massRect1.getPoints().addAll(new Double[] {
+					/*bot Right*/ topRightx, topRighty,
+					/*bot left*/  rBotLeftx = topRightx - (boxWidth * Math.cos(rAngle)), rBotLefty = topRighty + (boxWidth * Math.sin(rAngle)),
+					/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
+					/*top right*/ topRightx - (boxHeight * Math.sin(rAngle)), topRighty - (boxHeight * Math.cos(rAngle))
+						}
+					);
+		
 
-		massRect1 = new Polygon();
-		massRect1.getPoints().addAll(new Double[] {
-		/*bot Right*/ topRightx, topRighty,
-		/*bot left*/  rBotLeftx = topRightx - (boxWidth * Math.cos(rAngle)), rBotLefty = topRighty + (boxWidth * Math.sin(rAngle)),
-		/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
-		/*top right*/ topRightx - (boxHeight * Math.sin(rAngle)), topRighty - (boxHeight * Math.cos(rAngle))
-				}
-		);
+			Image metal = new Image(Main.class.getResourceAsStream("metal-texture.jpg"));
 
-		Image metal = new Image(Main.class.getResourceAsStream("metal-texture.jpg"));
+			massRect1.setFill(new ImagePattern(metal));
 
-		massRect1.setFill(new ImagePattern(metal));
+			massRect1.setStroke(Color.BLACK);
 
-		massRect1.setStroke(Color.BLACK);
+			group.getChildren().add(massRect1);
 
-		group.getChildren().add(massRect1);
+			System.out.println(String.valueOf(massRect1.getScaleX()));
+			System.out.println(String.valueOf(massRect1.localToScene(massRect1.getLayoutBounds())));
+		} else {
+			
+			massRect1 = new Polygon();
+			rope1 = new Polygon();
+			if(dAngle < 45){
+			massRect1.getPoints().addAll(new Double[] {
+					/*bot Right*/ (botLeftx + topRightx)/2, topRighty + (0.5*(botLefty - topRighty)),
+					/*bot left*/  rBotLeftx = (botLeftx + topRightx)/2 - (boxWidth * Math.cos(rAngle)), rBotLefty = (topRighty + (0.5*(botLefty - topRighty))) + (boxWidth * Math.sin(rAngle)),
+					/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
+					/*top right*/ (botLeftx + topRightx)/2 - (boxHeight * Math.sin(rAngle)), (topRighty + (0.5*(botLefty - topRighty))) - (boxHeight * Math.cos(rAngle))
+						}
+					);
+			
+			//line = new Line();
+			
+			//line.startXProperty().bind(pulleyPlane.centerXProperty().add(pulleyPlane.translateXProperty()));
+			//line.startYProperty().bind(pulleyPlane.centerYProperty().add(pulleyPlane.translateYProperty()));
+			//line.setEndX(massRect1.getLayoutBounds().getMaxX());
+			//line.setEndY(massRect1.getLayoutBounds().getMaxY());
+			
+//			rope1.getPoints().addAll(new Double[] {
+//					/*bot Right*/ pulleyCenterX + (ropeHeight/2)*Math.cos(rAngle), pulleyCenterY + (ropeHeight/2)*Math.sin(rAngle),
+//					/*bot left*/  ropeBotLeftx = ((((botLeftx + topRightx)/2 - (boxHeight * Math.sin(rAngle))) + ((botLeftx + topRightx)/2))/2) + (ropeHeight/2)*Math.cos(rAngle), ropeBotLefty = ((((topRighty + (0.5*(botLefty - topRighty))) - (boxHeight * Math.cos(rAngle)) + (topRighty + (0.5*(botLefty - topRighty))))/2) + (ropeHeight/2)*Math.sin(rAngle)),
+//					/*top left*/  ropeBotLeftx - (ropeHeight/2)*Math.sin(rAngle), ropeBotLefty - ((ropeHeight/2) * Math.cos(rAngle)),
+//					/*top right*/ pulleyCenterX - (ropeHeight/2)*Math.cos(rAngle), pulleyCenterY - (ropeHeight/2)*Math.sin(rAngle)
+//						}
+//					);
+			
+			}
+			else {
+				massRect1.getPoints().addAll(new Double[] {
+						/*bot Right*/ ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)), topRighty + (0.5*(botLefty - topRighty)),
+						/*bot left*/  rBotLeftx = ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)) - (boxWidth * Math.cos(rAngle)), rBotLefty = (topRighty + (0.5*(botLefty - topRighty))) + (boxWidth * Math.sin(rAngle)),
+						/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
+						/*top right*/ ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)) - (boxHeight * Math.sin(rAngle)), (topRighty + (0.5*(botLefty - topRighty))) - (boxHeight * Math.cos(rAngle))
+							}
+						);
+//				rope1.getPoints().addAll(new Double[] {
+//						/*bot Right*/ pulleyCenterX + (ropeHeight/2)*Math.cos(rAngle), pulleyCenterY + (ropeHeight/2)*Math.sin(rAngle),
+//						/*bot left*/  rBotLeftx, rBotLefty,
+//						/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
+//						/*top right*/ pulleyCenterX + 2, pulleyCenterY -2
+//							}
+//						);
+				//line = new Line();
+				
+				//line.startXProperty().bind(pulleyPlane.centerXProperty().add(pulleyPlane.translateXProperty()));
+				//line.startYProperty().bind(pulleyPlane.centerYProperty().add(pulleyPlane.translateYProperty()));
+				//line.setEndX(massRect1.getLayoutBounds().getMaxX());
+				//line.setEndY(massRect1.getLayoutBounds().getMaxY());
+			}
+		
 
-		System.out.println(String.valueOf(massRect1.getScaleX()));
-		System.out.println(String.valueOf(massRect1.localToScene(massRect1.getLayoutBounds())));
+			Image metal = new Image(Main.class.getResourceAsStream("metal-texture.jpg"));
+			Image rope = new Image(Main.class.getResourceAsStream("rope.jpg"));
+
+			massRect1.setFill(new ImagePattern(metal));
+
+			massRect1.setStroke(Color.BLACK);
+			
+			//rope1.setFill(new ImagePattern(rope));
+			
+			//rope1.setStroke(Color.BLACK);
+
+			group.getChildren().add(massRect1);
+			//group.getChildren().add(line);
+			//group.getChildren().add(rope1);
+
+			System.out.println(String.valueOf(massRect1.getScaleX()));
+			System.out.println(String.valueOf(massRect1.localToScene(massRect1.getLayoutBounds())));
+		
+			massRect2 = new Polygon();
+			//rope2 = new Polygon();
+			
+			massRect2.getPoints().addAll(new Double[] {
+				/*bot Right*/ topRightx + 100, box2y + 100,
+				/*bot left*/  rBotLeftx2 = topRightx, rBotLefty2 = box2y + 100,
+				/*top left*/  topRightx, box2y,
+				/*top right*/ topRightx + 100, box2y
+			});
+			
+//			rope2.getPoints().addAll(new Double[] {
+//					/*bot Right*/ pulleyCenterX + ropeHeight/2, box2y,
+//					/*bot left*/  pulleyCenterX - ropeHeight/2, box2y,
+//					/*top left*/  pulleyCenterX - ropeHeight/2, pulleyCenterY,
+//					/*top right*/ pulleyCenterX + ropeHeight/2, pulleyCenterY
+//				});
+		
+			massRect2.setFill(new ImagePattern(metal));
+		
+			massRect2.setStroke(Color.BLACK);
+			
+			//rope2.setFill(new ImagePattern(rope));
+			
+			//rope2.setStroke(Color.BLACK);
+		
+			group.getChildren().add(massRect2);
+			//group.getChildren().add(rope2);
+		}
+		
 
 	}
 
@@ -427,8 +743,14 @@ public class GUI extends Application{
 	public static double getMinBoxY(){return massRect1.localToScene(massRect1.getLayoutBounds()).getMinY();}
 
 	public static double getMaxBoxY(){return massRect1.localToScene(massRect1.getLayoutBounds()).getMaxY();}
+	
+	public static double getMaxBoxY2(){
+		return massRect2.localToScene(massRect2.getLayoutBounds()).getMaxY();
+	}
 
 	public static double getBotLeftY(){return botLefty;}
+	
+	public static double getTopRightY(){return topRighty;}
 
 	public static void moveRect1X(double deltaX){
 		massRect1.setLayoutX(massRect1.getLayoutX()+deltaX);
@@ -436,6 +758,14 @@ public class GUI extends Application{
 
 	public static void moveRect1Y(double deltaY){
 		massRect1.setLayoutY(massRect1.getLayoutY()+deltaY);
+	}
+	
+	public static void moveRect2X(double deltaX){
+		massRect2.setLayoutX(massRect2.getLayoutX()+deltaX);
+	}
+
+	public static void moveRect2Y(double deltaY){
+		massRect2.setLayoutY(massRect2.getLayoutY()+deltaY);
 	}
 
 	public static void restart(){
