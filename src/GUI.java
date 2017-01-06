@@ -14,17 +14,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundPosition;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.BackgroundSize;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
-<<<<<<< HEAD
 import javafx.scene.shape.Circle;
-=======
->>>>>>> branch 'master' of https://github.com/macdows1/Newtons_Laws.git
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
@@ -36,8 +29,7 @@ public class GUI extends Application{
 	private double mWeight2;
 	private double mAccelG;
 	private double mLength;
-	private double uFrk;
-	private double uFrs;
+	private static double uFrk;
 	private double dAngle;
 	protected static double rAngle;
 	private double mAccelH;
@@ -59,7 +51,7 @@ public class GUI extends Application{
 	private TextField friction;
 	private TextField pulley;
 
-	private Button clear;
+	private Button vector;
 
 	private static Label timeField;
 	
@@ -125,7 +117,7 @@ public class GUI extends Application{
 		
 		
 		
-		GridPane grid = new GridPane();
+		final GridPane grid = new GridPane();
 		grid.setAlignment(Pos.CENTER_LEFT);
 		grid.setHgap(10);
 		grid.setVgap(10);
@@ -145,11 +137,8 @@ public class GUI extends Application{
 			mass2 = new TextField();
 			mass2.setPromptText("kg");
 		}
-		Button btn = new Button();
+		final Button btn = new Button();
 		btn.setText("Animate");
-		
-		Thread t = new Thread(new Animator());
-		Thread time = new Thread(new TimeCount());
 		btn.setOnAction(new EventHandler<ActionEvent>(){
 			
 			public void handle(ActionEvent event){
@@ -164,20 +153,14 @@ public class GUI extends Application{
 					restart();
 				}
 				if(startAnimation()){
-					if(hasDrawn) {
-						if (getMaxBoxY() <= getBotLeftY())
-							t.interrupt();
-
-					}
 					drawRamp(primaryStage);
 					drawBox();
-					if(calculateAcc() != 0){
-
-						t.start();
-						time.start();
+					if (calculateAcc() != 0) {
+						new Thread(new Animator()).start();
+						new Thread(new TimeCount()).start();
 					}
-
 				}
+
 			}
 		});
 		
@@ -305,6 +288,8 @@ public class GUI extends Application{
 					grid.add(boxCombo, 0, 11);
 					grid.add(pulleyField, 0, 12);
 					grid.add(comboPulley, 1, 12);
+
+					grid.add(vector,0,9);
 				} else {
 					isPulley = false;
 					grid.getChildren().clear();
@@ -325,6 +310,7 @@ public class GUI extends Application{
 					grid.add(timeField,1,10);
 					grid.add(pulleyField, 0, 12);
 					grid.add(comboPulley, 1, 12);
+					grid.add(vector,0,8);
 				}
 			}
 		});
@@ -335,23 +321,11 @@ public class GUI extends Application{
 
 		timeField = new Label();
 
-		clear = new Button("Clear");
-		clear.setOnAction(new EventHandler<ActionEvent>() {
+		vector = new Button("Show Vectors");
+		vector.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent actionEvent) {
-				restart();
-				length.setText("");
-				friction.setText("");
-				angle.setText("");
-				accel.setText("");
-				mass1.setText("");
-				group.getChildren().remove(massRect1);
-				if(isPulley) {
-					mass2.setText("");
-					group.getChildren().remove(massRect2);
-				}
-				group.getChildren().remove(plane);
-				newton.setImage(new Image(Main.class.getResourceAsStream("Newton.jpg")));
+				showVectors();
 			}
 		});
 		
@@ -376,13 +350,10 @@ public class GUI extends Application{
 			//grid.add(pulley, 1, 9);
 			grid.add(btn, 1, 9);
 			grid.add(timeField,1,10);
-<<<<<<< HEAD
 			grid.add(boxCombo, 0, 11);
 			grid.add(pulleyField, 0, 12);
 			grid.add(comboPulley, 1, 12);
-=======
-			grid.add(clear,0,9);
->>>>>>> branch 'master' of https://github.com/macdows1/Newtons_Laws.git
+			grid.add(vector,0,9);
 		}
 		else{
 			grid.add(newton,0,0,2,3);
@@ -396,27 +367,21 @@ public class GUI extends Application{
 			grid.add(length, 1, 6);
 			grid.add(frictionCombo, 0, 7);
 			grid.add(friction, 1, 7);
-<<<<<<< HEAD
 			//grid.add(pulleyCombo, 0, 8);
 			//grid.add(pulley, 1, 8);
-			grid.add(btn, 1, 9);
-			grid.add(timeField,1,10);
+			//grid.add(btn, 1, 9);
+			//grid.add(timeField,1,10);
 			grid.add(pulleyField, 0, 12);
 			grid.add(comboPulley, 1, 12);
-=======
 			grid.add(btn, 1, 8);
 			grid.add(timeField,1,9);
-			grid.add(clear,0,8);
->>>>>>> branch 'master' of https://github.com/macdows1/Newtons_Laws.git
+			grid.add(vector,0,8);
 		}
 		
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 			
 			public void handle(WindowEvent e){
 				Platform.exit();
-				t.interrupt();
-				time.interrupt();
-				
 			}
 		});
 
@@ -471,12 +436,7 @@ public class GUI extends Application{
 		
 		temp = friction.getText();
 		if(!temp.equals("")){
-			if(isKinetic == 0){
-				uFrk = Double.parseDouble(temp);
-			}
-			else if(isKinetic == 1){
-				uFrs = Double.parseDouble(temp);
-			}
+			uFrk = Double.parseDouble(temp);
 			temp = "";
 		}
 		else
@@ -626,8 +586,6 @@ public class GUI extends Application{
 		
 		double rBotLeftx2;
 		double rBotLefty2;
-
-<<<<<<< HEAD
 		double boxHeight = 100;
 		double boxWidth = 100;
 		
@@ -664,7 +622,6 @@ public class GUI extends Application{
 		
 
 			Image metal = new Image(Main.class.getResourceAsStream("metal-texture.jpg"));
-=======
 		massRect1 = new Polygon();
 		massRect1.getPoints().addAll(new Double[] {
 		/*bot Right*/ topRightx, topRighty,
@@ -673,7 +630,6 @@ public class GUI extends Application{
 		/*top right*/ topRightx - (boxHeight * Math.sin(rAngle)), topRighty - (boxHeight * Math.cos(rAngle))
 				}
 		);
->>>>>>> branch 'master' of https://github.com/macdows1/Newtons_Laws.git
 
 			massRect1.setFill(new ImagePattern(metal));
 
@@ -835,22 +791,42 @@ public class GUI extends Application{
 
 	public static void showVectors(){
 
-		Line gravityV = new Line();
-		double startX = botLeftx+
-				((boxWidth/2)*Math.cos(rAngle));
+		Stage vStage = new Stage();
+		HBox hBox = new HBox();
 
-		double startY = botLefty -
-				((boxWidth/2)*Math.sin(rAngle));
-		gravityV.setStartX(startX);
-		gravityV.setEndX(startX);
-		gravityV.setStartY(startY);
-		gravityV.setEndY(startY+50);
-		gravityV.setStroke(Color.RED);
-		gravityV.setStrokeWidth(5);
+		if(isPulley){
+			vStage.setHeight(600);
+			vStage.setWidth(600);
 
-		group.getChildren().add(gravityV);
+			String box1URL = "box1_pulley";
+			if(uFrk > 0)
+				box1URL += "_friction";
+			box1URL += ".png";
+			ImageView box1 = new ImageView(new Image(Main.class.getResourceAsStream(box1URL)));
+			ImageView box2 = new ImageView(new Image(Main.class.getResourceAsStream("box2.png")));
 
-		System.out.println(gravityV.getStartX() + "\n" + gravityV.getStartY());
+			hBox.getChildren().addAll(box1,box2);
+
+		}
+		else{
+			vStage.setHeight(600);
+			vStage.setWidth(300);
+
+			String box1URL = "box1";
+
+			if(uFrk > 0)
+				box1URL += "_friction";
+
+			box1URL += ".png";
+
+			ImageView box1 = new ImageView(new Image(Main.class.getResourceAsStream(box1URL)));
+
+			hBox.getChildren().addAll(box1);
+		}
+
+		vStage.setScene(new Scene(hBox));
+		vStage.show();
+
 	}
 	
 	
