@@ -5,11 +5,27 @@ import javafx.application.Platform;
  */
 public class Animator implements Runnable{
 
+	
+	private boolean stopRequested = false;
 
     @Override
     public void run() {
+    	
+    	while(true){
+    		System.out.println("t");
+    	
 
-        while((GUI.getMaxBoxY() <= GUI.getBotLeftY()) && (GUI.getMaxBoxY() >= GUI.getTopRightY() + 10)){
+        while((GUI.getMaxBoxY() <= GUI.getBotLeftY()) && (GUI.getMaxBoxY() >= GUI.getTopRightY() + 1) && !GUI.stopRequested){
+        	
+        	//if(GUI.stopRequested){
+        	//	if(!GUI.time.isAlive())
+        	//		GUI.stopRequested = false;
+        	//	
+        	//	return;
+        	//}
+        	
+        	if(GUI.wantEmDead)
+        		return;
 
         	int tickRate = GUI.tickRate;
         	
@@ -52,15 +68,21 @@ public class Animator implements Runnable{
 
 
         }
-
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run() {
-				GUI.showTime();
-				GUI.showVectors();
-			}
-		});
+        
+    	
+//		Platform.runLater(new Runnable() {
+//			@Override
+//			public void run() {
+//				GUI.showTime();
+//				GUI.showVectors();
+//			}
+//		});
+    	}
+		
+		//return;
+		
 
     }
+    
 
 }
