@@ -21,10 +21,7 @@ import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
-<<<<<<< HEAD
 import javafx.scene.shape.Circle;
-=======
->>>>>>> branch 'master' of https://github.com/macdows1/Newtons_Laws.git
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
@@ -75,6 +72,9 @@ public class GUI extends Application{
 	private static double pulleyCenterY;
 
 	private static double pConvert;
+	
+	protected static boolean stopRequested = false;
+	protected static boolean wantEmDead = false;
 
 	protected static volatile double pVelx;
 	protected static volatile double pVely;
@@ -86,11 +86,15 @@ public class GUI extends Application{
 	private static Polygon massRect1;
 	private static Polygon massRect2;
 	
+	private static Polygon massRect3;
+	private static Polygon massRect4;
+	
 	private static Polygon rope1;
 	private static Polygon rope2;
 
 	private boolean hasDrawn = false;
 	public static boolean isPulley = false;
+	private static boolean created = false;
 
 	private static Group group;
 	
@@ -153,9 +157,12 @@ public class GUI extends Application{
 		btn.setOnAction(new EventHandler<ActionEvent>(){
 			
 			public void handle(ActionEvent event){
+				created = false;
 				if(hasDrawn){
 					group.getChildren().remove(massRect1);
 					group.getChildren().remove(massRect2);
+					group.getChildren().remove(massRect3);
+					group.getChildren().remove(massRect4);
 					group.getChildren().remove(line);
 					group.getChildren().remove(plane);
 					group.getChildren().remove(pulleyPlane);
@@ -165,16 +172,24 @@ public class GUI extends Application{
 				}
 				if(startAnimation()){
 					if(hasDrawn) {
-						if (getMaxBoxY() <= getBotLeftY())
-							t.interrupt();
+						if (getMaxBoxY() <= getBotLeftY()){
+							//t.interrupt();
+							stopRequested = true;
+						}
 
 					}
 					drawRamp(primaryStage);
 					drawBox();
 					if(calculateAcc() != 0){
 
-						t.start();
-						time.start();
+						if(t.isAlive()){
+							stopRequested = false;
+						} else {
+							System.out.println(t.getState());
+							t.start();
+							time.start();
+						}
+						
 					}
 
 				}
@@ -245,6 +260,9 @@ public class GUI extends Application{
 		pulleyCombo.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent event){
 				if(pulleyCombo.getValue().equals("Pulley")){
+					if(t.isAlive())
+						stopRequested = true;
+						
 					isPulley = true;
 				} else {
 					isPulley = false;
@@ -376,13 +394,9 @@ public class GUI extends Application{
 			//grid.add(pulley, 1, 9);
 			grid.add(btn, 1, 9);
 			grid.add(timeField,1,10);
-<<<<<<< HEAD
 			grid.add(boxCombo, 0, 11);
 			grid.add(pulleyField, 0, 12);
 			grid.add(comboPulley, 1, 12);
-=======
-			grid.add(clear,0,9);
->>>>>>> branch 'master' of https://github.com/macdows1/Newtons_Laws.git
 		}
 		else{
 			grid.add(newton,0,0,2,3);
@@ -396,26 +410,20 @@ public class GUI extends Application{
 			grid.add(length, 1, 6);
 			grid.add(frictionCombo, 0, 7);
 			grid.add(friction, 1, 7);
-<<<<<<< HEAD
 			//grid.add(pulleyCombo, 0, 8);
 			//grid.add(pulley, 1, 8);
 			grid.add(btn, 1, 9);
 			grid.add(timeField,1,10);
 			grid.add(pulleyField, 0, 12);
 			grid.add(comboPulley, 1, 12);
-=======
-			grid.add(btn, 1, 8);
-			grid.add(timeField,1,9);
 			grid.add(clear,0,8);
->>>>>>> branch 'master' of https://github.com/macdows1/Newtons_Laws.git
 		}
 		
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 			
 			public void handle(WindowEvent e){
 				Platform.exit();
-				t.interrupt();
-				time.interrupt();
+				wantEmDead = true;
 				
 			}
 		});
@@ -627,9 +635,10 @@ public class GUI extends Application{
 		double rBotLeftx2;
 		double rBotLefty2;
 
-<<<<<<< HEAD
 		double boxHeight = 100;
 		double boxWidth = 100;
+		
+		double boxWidth2 = 1000;
 		
 		double ropeBotLeftx;
 		double ropeBotLefty;
@@ -664,16 +673,6 @@ public class GUI extends Application{
 		
 
 			Image metal = new Image(Main.class.getResourceAsStream("metal-texture.jpg"));
-=======
-		massRect1 = new Polygon();
-		massRect1.getPoints().addAll(new Double[] {
-		/*bot Right*/ topRightx, topRighty,
-		/*bot left*/  rBotLeftx = topRightx - (boxWidth * Math.cos(rAngle)), rBotLefty = topRighty + (boxWidth * Math.sin(rAngle)),
-		/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
-		/*top right*/ topRightx - (boxHeight * Math.sin(rAngle)), topRighty - (boxHeight * Math.cos(rAngle))
-				}
-		);
->>>>>>> branch 'master' of https://github.com/macdows1/Newtons_Laws.git
 
 			massRect1.setFill(new ImagePattern(metal));
 
@@ -686,6 +685,7 @@ public class GUI extends Application{
 		} else {
 			
 			massRect1 = new Polygon();
+			massRect3 = new Polygon();
 			rope1 = new Polygon();
 			if(dAngle < 45){
 			massRect1.getPoints().addAll(new Double[] {
@@ -696,10 +696,18 @@ public class GUI extends Application{
 						}
 					);
 			
+			massRect3.getPoints().addAll(new Double[] {
+					/*bot Right*/ (botLeftx + topRightx)/2, topRighty + (0.5*(botLefty - topRighty)),
+					/*bot left*/  rBotLeftx2 = (botLeftx + topRightx)/2 - (boxWidth2 * Math.cos(rAngle)), rBotLefty2 = (topRighty + (0.5*(botLefty - topRighty))) + (boxWidth2 * Math.sin(rAngle)),
+					/*top left*/  rBotLeftx2 - (boxHeight * Math.sin(rAngle)), rBotLefty2 - (boxHeight * Math.cos(rAngle)),
+					/*top right*/ (botLeftx + topRightx)/2 - (boxHeight * Math.sin(rAngle)), (topRighty + (0.5*(botLefty - topRighty))) - (boxHeight * Math.cos(rAngle))
+						}
+					);
+			
 			//line = new Line();
 			
 			//line.startXProperty().bind(pulleyPlane.centerXProperty().add(pulleyPlane.translateXProperty()));
-			//line.startYProperty().bind(pulleyPlane.centerYProperty().add(pulleyPlane.translateYProperty()));
+			//line.startYProperty().bind(pulleyPlane.centmassRect2.equals(null)erYProperty().add(pulleyPlane.translateYProperty()));
 			//line.setEndX(massRect1.getLayoutBounds().getMaxX());
 			//line.setEndY(massRect1.getLayoutBounds().getMaxY());
 			
@@ -710,6 +718,16 @@ public class GUI extends Application{
 //					/*top right*/ pulleyCenterX - (ropeHeight/2)*Math.cos(rAngle), pulleyCenterY - (ropeHeight/2)*Math.sin(rAngle)
 //						}
 //					);
+//			
+//			}
+			
+			rope1.getPoints().addAll(new Double[] {
+					/*bot Right*/ pulleyCenterX + (ropeHeight/2)*Math.cos(rAngle), pulleyCenterY + (ropeHeight/2)*Math.sin(rAngle),
+					/*bot left*/  ropeBotLeftx = botLeftx - ((pulleyCenterX + (ropeHeight/2)*Math.cos(rAngle)) - topRightx), ropeBotLefty = botLefty,
+					/*top left*/  ropeBotLeftx - (ropeHeight/2)*Math.sin(rAngle), ropeBotLefty - ((ropeHeight/2) * Math.cos(rAngle)),
+					/*top right*/ pulleyCenterX - (ropeHeight/2)*Math.cos(rAngle), pulleyCenterY - (ropeHeight/2)*Math.sin(rAngle)
+						}
+					);
 			
 			}
 			else {
@@ -720,13 +738,21 @@ public class GUI extends Application{
 						/*top right*/ ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)) - (boxHeight * Math.sin(rAngle)), (topRighty + (0.5*(botLefty - topRighty))) - (boxHeight * Math.cos(rAngle))
 							}
 						);
-//				rope1.getPoints().addAll(new Double[] {
-//						/*bot Right*/ pulleyCenterX + (ropeHeight/2)*Math.cos(rAngle), pulleyCenterY + (ropeHeight/2)*Math.sin(rAngle),
-//						/*bot left*/  rBotLeftx, rBotLefty,
-//						/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
-//						/*top right*/ pulleyCenterX + 2, pulleyCenterY -2
-//							}
-//						);
+				
+				massRect3.getPoints().addAll(new Double[] {
+						/*bot Right*/ ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)), topRighty + (0.5*(botLefty - topRighty)),
+						/*bot left*/  rBotLeftx2 = ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)) - (boxWidth2 * Math.cos(rAngle)), rBotLefty2 = (topRighty + (0.5*(botLefty - topRighty))) + (boxWidth2 * Math.sin(rAngle)),
+						/*top left*/  rBotLeftx2 - (boxHeight * Math.sin(rAngle)), rBotLefty2 - (boxHeight * Math.cos(rAngle)),
+						/*top right*/ ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)) - (boxHeight * Math.sin(rAngle)), (topRighty + (0.5*(botLefty - topRighty))) - (boxHeight * Math.cos(rAngle))
+							}
+						);
+				rope1.getPoints().addAll(new Double[] {
+						botLeftx+600,pulleyCenterY,
+						((botLeftx+600)-(((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle))))) - (-pulleyCenterY + topRighty),botLefty,
+						((botLeftx+600)-(((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle))))) - (-pulleyCenterY + topRighty) - ((ropeHeight)*Math.cos(rAngle)),botLefty,
+						(botLeftx+600),pulleyCenterY - (ropeHeight)*Math.sin(rAngle)
+							}
+						);
 				//line = new Line();
 				
 				//line.startXProperty().bind(pulleyPlane.centerXProperty().add(pulleyPlane.translateXProperty()));
@@ -743,19 +769,24 @@ public class GUI extends Application{
 
 			massRect1.setStroke(Color.BLACK);
 			
-			//rope1.setFill(new ImagePattern(rope));
+			massRect3.setFill(Color.WHITE);
 			
-			//rope1.setStroke(Color.BLACK);
-
+			rope1.setFill(new ImagePattern(rope));
+			
+			rope1.setStroke(Color.BLACK);
+			
+			group.getChildren().add(rope1);
+			group.getChildren().add(massRect3);
 			group.getChildren().add(massRect1);
 			//group.getChildren().add(line);
-			//group.getChildren().add(rope1);
+			
 
 			System.out.println(String.valueOf(massRect1.getScaleX()));
 			System.out.println(String.valueOf(massRect1.localToScene(massRect1.getLayoutBounds())));
 		
 			massRect2 = new Polygon();
-			//rope2 = new Polygon();
+			massRect4 = new Polygon();
+			rope2 = new Polygon();
 			
 			massRect2.getPoints().addAll(new Double[] {
 				/*bot Right*/ topRightx + 100, box2y + 100,
@@ -764,23 +795,35 @@ public class GUI extends Application{
 				/*top right*/ topRightx + 100, box2y
 			});
 			
-//			rope2.getPoints().addAll(new Double[] {
-//					/*bot Right*/ pulleyCenterX + ropeHeight/2, box2y,
-//					/*bot left*/  pulleyCenterX - ropeHeight/2, box2y,
-//					/*top left*/  pulleyCenterX - ropeHeight/2, pulleyCenterY,
-//					/*top right*/ pulleyCenterX + ropeHeight/2, pulleyCenterY
-//				});
+			massRect4.getPoints().addAll(new Double[] {
+					/*bot Right*/ topRightx + 100, box2y + 1000,
+					/*bot left*/  rBotLeftx2 = topRightx, rBotLefty2 = box2y + 1000,
+					/*top left*/  topRightx, box2y,
+					/*top right*/ topRightx + 100, box2y
+				});
+			
+			rope2.getPoints().addAll(new Double[] {
+					/*bot Right*/ pulleyCenterX + ropeHeight/2, botLefty,
+					/*bot left*/  pulleyCenterX - ropeHeight/2, botLefty,
+					/*top left*/  pulleyCenterX - ropeHeight/2, pulleyCenterY,
+					/*top right*/ pulleyCenterX + ropeHeight/2, pulleyCenterY
+				});
 		
 			massRect2.setFill(new ImagePattern(metal));
 		
 			massRect2.setStroke(Color.BLACK);
 			
-			//rope2.setFill(new ImagePattern(rope));
+			massRect4.setFill(Color.WHITE);
 			
-			//rope2.setStroke(Color.BLACK);
-		
+			rope2.setFill(new ImagePattern(rope));
+			
+			rope2.setStroke(Color.BLACK);
+			
+			group.getChildren().add(rope2);
+			group.getChildren().add(massRect4);
 			group.getChildren().add(massRect2);
-			//group.getChildren().add(rope2);
+			created = true;
+			
 		}
 		
 
@@ -795,7 +838,11 @@ public class GUI extends Application{
 	public static double getMaxBoxY(){return massRect1.localToScene(massRect1.getLayoutBounds()).getMaxY();}
 	
 	public static double getMaxBoxY2(){
-		return massRect2.localToScene(massRect2.getLayoutBounds()).getMaxY();
+		
+		if(created)
+			return massRect2.localToScene(massRect2.getLayoutBounds()).getMaxY();
+		else
+			return 50;
 	}
 
 	public static double getBotLeftY(){return botLefty;}
@@ -804,18 +851,22 @@ public class GUI extends Application{
 
 	public static void moveRect1X(double deltaX){
 		massRect1.setLayoutX(massRect1.getLayoutX()+deltaX);
+		massRect3.setLayoutX(massRect1.getLayoutX()+deltaX);
 	}
 
 	public static void moveRect1Y(double deltaY){
 		massRect1.setLayoutY(massRect1.getLayoutY()+deltaY);
+		massRect3.setLayoutY(massRect1.getLayoutY()+deltaY);
 	}
 	
 	public static void moveRect2X(double deltaX){
 		massRect2.setLayoutX(massRect2.getLayoutX()+deltaX);
+		massRect4.setLayoutX(massRect2.getLayoutX()+deltaX);
 	}
 
 	public static void moveRect2Y(double deltaY){
 		massRect2.setLayoutY(massRect2.getLayoutY()+deltaY);
+		massRect4.setLayoutY(massRect2.getLayoutY()+deltaY);
 	}
 
 	public static void restart(){

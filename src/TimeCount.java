@@ -4,12 +4,17 @@ import java.awt.*;
  * Created by danny on 12/2/16.
  */
 public class TimeCount implements Runnable{
+	
+	private boolean stopRequested = false;
 
 
 	@Override
 	public void run() {
 
-		while (GUI.getMaxBoxY() <= GUI.getBotLeftY()){
+		while ((GUI.getMaxBoxY() <= GUI.getBotLeftY())){
+			
+			if(GUI.wantEmDead)
+				return;
 
 			try {
 				Thread.sleep(1);
@@ -23,4 +28,5 @@ public class TimeCount implements Runnable{
 		}
 
 	}
+	
 }
