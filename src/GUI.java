@@ -14,16 +14,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundPosition;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.BackgroundSize;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -33,8 +30,7 @@ public class GUI extends Application{
 	private double mWeight2;
 	private double mAccelG;
 	private double mLength;
-	private double uFrk;
-	private double uFrs;
+	private static double uFrk;
 	private double dAngle;
 	protected static double rAngle;
 	private double mAccelH;
@@ -56,7 +52,7 @@ public class GUI extends Application{
 	private TextField friction;
 	private TextField pulley;
 
-	private Button clear;
+	private Button vector;
 
 	private static Label timeField;
 	
@@ -93,7 +89,7 @@ public class GUI extends Application{
 	private static Polygon rope2;
 
 	private boolean hasDrawn = false;
-	public static boolean isPulley = false;
+	public static boolean isPulley = true;
 	private static boolean created = false;
 
 	private static Group group;
@@ -103,6 +99,8 @@ public class GUI extends Application{
 	private Circle pulleyPlane;
 
 	private ImageView newton;
+	
+	private Rectangle backgroundRectangle;
 	
 	private static Line line;
 
@@ -119,17 +117,25 @@ public class GUI extends Application{
 	public void start(final Stage primaryStage) throws Exception {
 		
 		Image background = new Image(Main.class.getResourceAsStream("background.jpg"));
-		BackgroundImage myBI = new BackgroundImage(background, BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT,
-				BackgroundPosition.DEFAULT, BackgroundSize.DEFAULT);
+		backgroundRectangle = new Rectangle();
+		backgroundRectangle.setWidth(3000);
+		backgroundRectangle.setHeight(3000);
+		
+		backgroundRectangle.setStroke(Color.BLACK);
+		
+		backgroundRectangle.setFill(Color.CADETBLUE);
+		
 		
 		
 		group = new Group();
-		group.setStyle("-fx-background-color :#D3D3D3;");
+		group.setStyle("-fx-background-color :#5F9EA0;");
+		
+		group.getChildren().add(backgroundRectangle);
 		
 		
 		
 		
-		GridPane grid = new GridPane();
+		final GridPane grid = new GridPane();
 		grid.setAlignment(Pos.CENTER_LEFT);
 		grid.setHgap(10);
 		grid.setVgap(10);
@@ -149,11 +155,8 @@ public class GUI extends Application{
 			mass2 = new TextField();
 			mass2.setPromptText("kg");
 		}
-		Button btn = new Button();
+		final Button btn = new Button();
 		btn.setText("Animate");
-		
-		Thread t = new Thread(new Animator());
-		Thread time = new Thread(new TimeCount());
 		btn.setOnAction(new EventHandler<ActionEvent>(){
 			
 			public void handle(ActionEvent event){
@@ -171,28 +174,14 @@ public class GUI extends Application{
 					restart();
 				}
 				if(startAnimation()){
-					if(hasDrawn) {
-						if (getMaxBoxY() <= getBotLeftY()){
-							//t.interrupt();
-							stopRequested = true;
-						}
-
-					}
 					drawRamp(primaryStage);
 					drawBox();
-					if(calculateAcc() != 0){
-
-						if(t.isAlive()){
-							stopRequested = false;
-						} else {
-							System.out.println(t.getState());
-							t.start();
-							time.start();
-						}
-						
+					if (calculateAcc() != 0) {
+						new Thread(new Animator()).start();
+						new Thread(new TimeCount()).start();
 					}
-
 				}
+
 			}
 		});
 		
@@ -260,8 +249,6 @@ public class GUI extends Application{
 		pulleyCombo.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent event){
 				if(pulleyCombo.getValue().equals("Pulley")){
-					if(t.isAlive())
-						stopRequested = true;
 						
 					isPulley = true;
 				} else {
@@ -294,7 +281,7 @@ public class GUI extends Application{
 		ObservableList<String> opIsPulley = FXCollections.observableArrayList ("Yes", "No");
 		
 		final ComboBox<String> comboPulley = new ComboBox<>(opIsPulley);
-		comboPulley.setValue("No");
+		comboPulley.setValue("Yes");
 		
 		comboPulley.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent event){
@@ -323,6 +310,8 @@ public class GUI extends Application{
 					grid.add(boxCombo, 0, 11);
 					grid.add(pulleyField, 0, 12);
 					grid.add(comboPulley, 1, 12);
+
+					grid.add(vector,0,9);
 				} else {
 					isPulley = false;
 					grid.getChildren().clear();
@@ -343,6 +332,7 @@ public class GUI extends Application{
 					grid.add(timeField,1,10);
 					grid.add(pulleyField, 0, 12);
 					grid.add(comboPulley, 1, 12);
+					grid.add(vector,0,8);
 				}
 			}
 		});
@@ -353,23 +343,11 @@ public class GUI extends Application{
 
 		timeField = new Label();
 
-		clear = new Button("Clear");
-		clear.setOnAction(new EventHandler<ActionEvent>() {
+		vector = new Button("Show Vectors");
+		vector.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent actionEvent) {
-				restart();
-				length.setText("");
-				friction.setText("");
-				angle.setText("");
-				accel.setText("");
-				mass1.setText("");
-				group.getChildren().remove(massRect1);
-				if(isPulley) {
-					mass2.setText("");
-					group.getChildren().remove(massRect2);
-				}
-				group.getChildren().remove(plane);
-				newton.setImage(new Image(Main.class.getResourceAsStream("Newton.jpg")));
+				showVectors();
 			}
 		});
 		
@@ -397,6 +375,7 @@ public class GUI extends Application{
 			grid.add(boxCombo, 0, 11);
 			grid.add(pulleyField, 0, 12);
 			grid.add(comboPulley, 1, 12);
+			grid.add(vector,0,9);
 		}
 		else{
 			grid.add(newton,0,0,2,3);
@@ -412,19 +391,19 @@ public class GUI extends Application{
 			grid.add(friction, 1, 7);
 			//grid.add(pulleyCombo, 0, 8);
 			//grid.add(pulley, 1, 8);
-			grid.add(btn, 1, 9);
-			grid.add(timeField,1,10);
+			//grid.add(btn, 1, 9);
+			//grid.add(timeField,1,10);
 			grid.add(pulleyField, 0, 12);
 			grid.add(comboPulley, 1, 12);
-			grid.add(clear,0,8);
+			grid.add(btn, 1, 8);
+			grid.add(timeField,1,9);
+			grid.add(vector,0,8);
 		}
 		
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 			
 			public void handle(WindowEvent e){
 				Platform.exit();
-				wantEmDead = true;
-				
 			}
 		});
 
@@ -479,12 +458,7 @@ public class GUI extends Application{
 		
 		temp = friction.getText();
 		if(!temp.equals("")){
-			if(isKinetic == 0){
-				uFrk = Double.parseDouble(temp);
-			}
-			else if(isKinetic == 1){
-				uFrs = Double.parseDouble(temp);
-			}
+			uFrk = Double.parseDouble(temp);
 			temp = "";
 		}
 		else
@@ -525,7 +499,7 @@ public class GUI extends Application{
 		
 		Image pulley = new Image(Main.class.getResourceAsStream("pulley.jpg"));
 		
-		botLeftx = windowW/2;
+		botLeftx = windowW/3;
 		botLefty = (int)(windowH*.8);
 		
 		double pHeight;
@@ -612,7 +586,19 @@ public class GUI extends Application{
 		if(!isPulley){
 		mAccelH = (mAccelG*Math.sin(rAngle))-(uFrk*mAccelG*Math.cos(rAngle));
 		} else {
-			mAccelH = ((mWeight1*Math.sin(rAngle))-mWeight2-(uFrk*mWeight1*Math.cos(rAngle)))/((mWeight1+mWeight2)/mAccelG);
+			if(((mWeight1*Math.sin(rAngle)) >= mWeight2)){
+				if((mWeight2 + (uFrk*mWeight1*Math.cos(rAngle))) > (mWeight1*Math.sin(rAngle))){
+					mAccelH = 0;
+				} else {
+					mAccelH = -((mWeight2) - (mWeight1*Math.sin(rAngle)) + (uFrk*mWeight1*Math.cos(rAngle)))/((mWeight1+mWeight2)/mAccelG);
+				}
+			} else {
+				if(((mWeight1*Math.sin(rAngle)) + (uFrk*mWeight1*Math.cos(rAngle))) > (mWeight2)){
+					mAccelH = 0;
+				} else {
+					mAccelH = ((mWeight1*Math.sin(rAngle))-mWeight2+(uFrk*mWeight1*Math.cos(rAngle)))/((mWeight1+mWeight2)/mAccelG);
+				}
+			}
 		}
 		pAccel = mAccelH*pConvert;
 		pAccelx = pAccel*Math.cos(rAngle);
@@ -634,7 +620,6 @@ public class GUI extends Application{
 		
 		double rBotLeftx2;
 		double rBotLefty2;
-
 		double boxHeight = 100;
 		double boxWidth = 100;
 		
@@ -673,6 +658,14 @@ public class GUI extends Application{
 		
 
 			Image metal = new Image(Main.class.getResourceAsStream("metal-texture.jpg"));
+		massRect1 = new Polygon();
+		massRect1.getPoints().addAll(new Double[] {
+		/*bot Right*/ topRightx, topRighty,
+		/*bot left*/  rBotLeftx = topRightx - (boxWidth * Math.cos(rAngle)), rBotLefty = topRighty + (boxWidth * Math.sin(rAngle)),
+		/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
+		/*top right*/ topRightx - (boxHeight * Math.sin(rAngle)), topRighty - (boxHeight * Math.cos(rAngle))
+				}
+		);
 
 			massRect1.setFill(new ImagePattern(metal));
 
@@ -769,11 +762,13 @@ public class GUI extends Application{
 
 			massRect1.setStroke(Color.BLACK);
 			
-			massRect3.setFill(Color.WHITE);
+			massRect3.setFill(Color.CADETBLUE);
 			
 			rope1.setFill(new ImagePattern(rope));
 			
 			rope1.setStroke(Color.BLACK);
+			
+			
 			
 			group.getChildren().add(rope1);
 			group.getChildren().add(massRect3);
@@ -813,7 +808,7 @@ public class GUI extends Application{
 		
 			massRect2.setStroke(Color.BLACK);
 			
-			massRect4.setFill(Color.WHITE);
+			massRect4.setFill(Color.CADETBLUE);
 			
 			rope2.setFill(new ImagePattern(rope));
 			
@@ -886,22 +881,42 @@ public class GUI extends Application{
 
 	public static void showVectors(){
 
-		Line gravityV = new Line();
-		double startX = botLeftx+
-				((boxWidth/2)*Math.cos(rAngle));
+		Stage vStage = new Stage();
+		HBox hBox = new HBox();
 
-		double startY = botLefty -
-				((boxWidth/2)*Math.sin(rAngle));
-		gravityV.setStartX(startX);
-		gravityV.setEndX(startX);
-		gravityV.setStartY(startY);
-		gravityV.setEndY(startY+50);
-		gravityV.setStroke(Color.RED);
-		gravityV.setStrokeWidth(5);
+		if(isPulley){
+			vStage.setHeight(600);
+			vStage.setWidth(600);
 
-		group.getChildren().add(gravityV);
+			String box1URL = "box1_pulley";
+			if(uFrk > 0)
+				box1URL += "_friction";
+			box1URL += ".png";
+			ImageView box1 = new ImageView(new Image(Main.class.getResourceAsStream(box1URL)));
+			ImageView box2 = new ImageView(new Image(Main.class.getResourceAsStream("box2.png")));
 
-		System.out.println(gravityV.getStartX() + "\n" + gravityV.getStartY());
+			hBox.getChildren().addAll(box1,box2);
+
+		}
+		else{
+			vStage.setHeight(600);
+			vStage.setWidth(300);
+
+			String box1URL = "box1";
+
+			if(uFrk > 0)
+				box1URL += "_friction";
+
+			box1URL += ".png";
+
+			ImageView box1 = new ImageView(new Image(Main.class.getResourceAsStream(box1URL)));
+
+			hBox.getChildren().addAll(box1);
+		}
+
+		vStage.setScene(new Scene(hBox));
+		vStage.show();
+
 	}
 	
 	

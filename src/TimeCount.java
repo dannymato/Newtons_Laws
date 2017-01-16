@@ -1,5 +1,3 @@
-import java.awt.*;
-
 /**
  * Created by danny on 12/2/16.
  */
@@ -11,10 +9,7 @@ public class TimeCount implements Runnable{
 	@Override
 	public void run() {
 
-		while ((GUI.getMaxBoxY() <= GUI.getBotLeftY())){
-			
-			if(GUI.wantEmDead)
-				return;
+		while (GUI.getMaxBoxY() <= GUI.getBotLeftY() && (GUI.getMaxBoxY() >= GUI.getTopRightY() + 10) && GUI.pAccel > 0){
 
 			try {
 				Thread.sleep(1);
