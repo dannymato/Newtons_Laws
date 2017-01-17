@@ -1,3 +1,6 @@
+import javafx.animation.Animation;
+import javafx.animation.Interpolator;
+import javafx.animation.Transition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -14,7 +17,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
@@ -23,6 +27,9 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.Duration;
+
+import java.util.ArrayList;
 
 public class GUI extends Application{
 	
@@ -104,6 +111,13 @@ public class GUI extends Application{
 	
 	private static Line line;
 
+	private double xPos = 0;
+	private double yPos1 = 0;
+	private double yPos2 = 0;
+	private double time = 0;
+
+	private double pHeight;
+
 	protected static final int tickRate = 60;
 
 	private static final double boxHeight = 100;
@@ -172,18 +186,81 @@ public class GUI extends Application{
 					group.getChildren().remove(rope1);
 					group.getChildren().remove(rope2);
 					restart();
+					xPos = 0;
+					yPos2 = 0;
+					yPos1 = 0;
 				}
 				if(startAnimation()){
 					drawRamp(primaryStage);
 					drawBox();
-					if (calculateAcc() != 0) {
-						new Thread(new Animator()).start();
-						new Thread(new TimeCount()).start();
+					if(calculateAcc() == 0){
+							time = 0;
+						}
+						else{
+							time = calculateTime();
+						}
+						Animation animator = new Transition(){
+							{
+								setCycleDuration(Duration.seconds(time));
+								setDelay(Duration.millis(16));
+								System.out.print(time/.016);
+								setOnFinished(new EventHandler<ActionEvent>() {
+									@Override
+									public void handle(ActionEvent actionEvent) {
+										showTime();
+									}
+								});
+								setInterpolator(Interpolator.LINEAR);
+							}
+
+
+							@Override
+							protected void interpolate(double v) {
+								if(getCurrentTime().lessThan(getTotalDuration())) {
+									if(!isPulley) {
+										System.out.println(getCurrentTime());
+										double currTime = getCurrentTime().toSeconds();
+										double x = pAccelx * 0.5 * currTime * currTime;
+										double deltax = x - xPos;
+										xPos = x;
+										moveRect1X(-deltax);
+										double y = pAccely * 0.5 * currTime * currTime;
+										double deltay = y - yPos1;
+										yPos1 = y;
+										moveRect1Y(deltay);
+										System.out.println(getCurrentTime());
+									}
+									else{
+										System.out.println(getCurrentTime());
+										double currTime = getCurrentTime().toSeconds();
+										double x1 = pAccelx * 0.5 * currTime * currTime;
+										double deltax = x1 - xPos;
+										xPos = x1;
+										moveRect1X(-deltax);
+										double y1 = pAccely * 0.5 * currTime * currTime;
+										double deltay1 = y1 - yPos1;
+										yPos1 = y1;
+										moveRect1Y(deltay1);
+
+										double y2 = pAccel * 0.5 * currTime * currTime;
+										double deltay2 = y2 - yPos2;
+										yPos2 = y2;
+										moveRect2Y(-deltay2);
+
+
+									}
+								}
+							}
+						};
+						animator.play();
+
+
+
 					}
 				}
 
 			}
-		});
+		);
 		
 		ObservableList<String> options = FXCollections.observableArrayList ("Mass 1", "Weight 1");
 		
@@ -401,7 +478,7 @@ public class GUI extends Application{
 		}
 		
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-			
+
 			public void handle(WindowEvent e){
 				Platform.exit();
 			}
@@ -409,9 +486,11 @@ public class GUI extends Application{
 
 
 
+
 		group.getChildren().add(grid);
-		
+
 		primaryStage.setScene(new Scene(group, 1280,1024));
+		primaryStage.setMaximized(true);
 		primaryStage.show();
 		
 	}
@@ -501,8 +580,6 @@ public class GUI extends Application{
 		
 		botLeftx = windowW/3;
 		botLefty = (int)(windowH*.8);
-		
-		double pHeight;
 
 		plane = new Polygon();
 		
@@ -531,8 +608,12 @@ public class GUI extends Application{
 		}
 		else{
 			int mHeight = (int)(mLength*Math.sin(rAngle));
-			pConvert = (botLefty-200)/mHeight;
-			
+
+			pHeight = botLefty - 200;
+
+			pConvert = pHeight/mHeight;
+
+
 			double mWidth = (int)(mLength*Math.cos(rAngle));
 			double pWidth = mWidth*pConvert;
 			
@@ -613,6 +694,40 @@ public class GUI extends Application{
 			return mAccelH;
 	}
 
+	private double calculateTime(){
+		if(isPulley) {
+			ArrayList<Double> times = new ArrayList<>();
+
+			if (pAccel < 0)
+				times.add(Math.sqrt(((((mLength*pConvert)/2))*2)/Math.abs(pAccel)));
+			else
+				times.add(Math.sqrt(((((mLength*pConvert)/2) - (boxWidth))*2)/Math.abs(pAccel)));
+
+			switch (heightIndex){
+				case 0:
+					if (pAccel < 0)
+						times.add(Math.sqrt(((pHeight-(boxWidth))*2)/Math.abs(pAccel)));
+					else
+						return 0.0;
+					break;
+				case 1:
+					if (pAccel > 0)
+						times.add(Math.sqrt(((pHeight/2)*2)/Math.abs(pAccel)));
+					else
+						times.add(Math.sqrt((((pHeight/2)-boxWidth)*2)/Math.abs(pAccel)));
+					break;
+				case 2:
+					if (pAccel < 0)
+						return 0.0;
+					break;
+			}
+			System.out.println(times);
+			return max(times.toArray(new Double[times.size()]));
+		}
+		else
+			return Math.sqrt((((mLength*pConvert)-boxWidth*1.5)*2)/Math.abs(pAccel));
+	}
+
 	private void drawBox() {
 
 		double rBotLeftx;
@@ -642,7 +757,8 @@ public class GUI extends Application{
 		if((box2y + 100) > botLefty){
 			box2y = botLefty + 100;
 		}
-		
+
+
 		double ropeStartX = pulleyPlane.getCenterX();
 		double ropeStartY = pulleyPlane.getCenterY();
 		
@@ -725,7 +841,8 @@ public class GUI extends Application{
 			}
 			else {
 				massRect1.getPoints().addAll(new Double[] {
-						/*bot Right*/ ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)), topRighty + (0.5*(botLefty - topRighty)),
+						/*bot Right*/ ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)
+								/(int)(mLength*Math.sin(rAngle)))/2)), topRighty + (0.5*(botLefty - topRighty)),
 						/*bot left*/  rBotLeftx = ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)) - (boxWidth * Math.cos(rAngle)), rBotLefty = (topRighty + (0.5*(botLefty - topRighty))) + (boxWidth * Math.sin(rAngle)),
 						/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
 						/*top right*/ ((botLeftx + 600) - (((int)(mLength*Math.cos(rAngle))*(botLefty-200)/(int)(mLength*Math.sin(rAngle)))/2)) - (boxHeight * Math.sin(rAngle)), (topRighty + (0.5*(botLefty - topRighty))) - (boxHeight * Math.cos(rAngle))
@@ -846,12 +963,14 @@ public class GUI extends Application{
 
 	public static void moveRect1X(double deltaX){
 		massRect1.setLayoutX(massRect1.getLayoutX()+deltaX);
-		massRect3.setLayoutX(massRect1.getLayoutX()+deltaX);
+		if(isPulley)
+			massRect3.setLayoutX(massRect1.getLayoutX()+deltaX);
 	}
 
 	public static void moveRect1Y(double deltaY){
 		massRect1.setLayoutY(massRect1.getLayoutY()+deltaY);
-		massRect3.setLayoutY(massRect1.getLayoutY()+deltaY);
+		if(isPulley)
+			massRect3.setLayoutY(massRect1.getLayoutY()+deltaY);
 	}
 	
 	public static void moveRect2X(double deltaX){
@@ -874,9 +993,9 @@ public class GUI extends Application{
 		timeField.setText("");
 	}
 
-	public static void showTime(){
-		System.out.println(mSecs);
-		timeField.setText("Time = " + String.format("%.2f",mSecs/1000.0) + " s");
+	public void showTime(){
+		System.out.println(time);
+		timeField.setText("Time = " + String.format("%.2f",time) + " s");
 	}
 
 	public static void showVectors(){
@@ -917,6 +1036,18 @@ public class GUI extends Application{
 		vStage.setScene(new Scene(hBox));
 		vStage.show();
 
+	}
+
+	private double max(Double[] d){
+
+		double x = Double.MAX_VALUE;
+
+		for(double i : d){
+			if (i < x)
+				x = i;
+		}
+
+		return x;
 	}
 	
 	
