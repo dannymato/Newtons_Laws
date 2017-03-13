@@ -18,7 +18,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
@@ -98,6 +97,8 @@ public class GUI extends Application{
 	private boolean hasDrawn = false;
 	public static boolean isPulley = true;
 	private static boolean created = false;
+
+	private boolean hasAnimated = false;
 
 	private static Group group;
 	
@@ -208,9 +209,11 @@ public class GUI extends Application{
 									@Override
 									public void handle(ActionEvent actionEvent) {
 										showTime();
+										hasAnimated = true;
 									}
 								});
 								setInterpolator(Interpolator.LINEAR);
+
 							}
 
 
@@ -250,6 +253,8 @@ public class GUI extends Application{
 
 									}
 								}
+
+
 							}
 						};
 						animator.play();
@@ -307,10 +312,10 @@ public class GUI extends Application{
 		length = new TextField();
 		length.setPromptText("meters");
 		
-		ObservableList<String> optionsFriction = FXCollections.observableArrayList ("Fr\u2096", "Fr\u209B");
+		ObservableList<String> optionsFriction = FXCollections.observableArrayList ("\u00B5\u2096", "\u00B5\u209B");
 
 		final ComboBox<String> frictionCombo = new ComboBox<>(optionsFriction);
-		frictionCombo.setValue("Fr\u2096");
+		frictionCombo.setValue("\u00B5\u2096");
 		
 		frictionCombo.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent event){
@@ -420,15 +425,13 @@ public class GUI extends Application{
 
 		timeField = new Label();
 
-		vector = new Button("Show Vectors");
+		vector = new Button("Vector Controls");
 		vector.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent actionEvent) {
 				showVectors();
 			}
 		});
-		
-		//pulley = new TextField();
 		
 		
 		if(isPulley) {
@@ -998,42 +1001,75 @@ public class GUI extends Application{
 		timeField.setText("Time = " + String.format("%.2f",time) + " s");
 	}
 
-	public static void showVectors(){
+	public void showVectors(){
 
 		Stage vStage = new Stage();
-		HBox hBox = new HBox();
+		GridPane vGrid = new GridPane();
 
-		if(isPulley){
-			vStage.setHeight(600);
-			vStage.setWidth(600);
+		vStage.setHeight(430);
+		vStage.setWidth(200);
 
-			String box1URL = "box1_pulley";
-			if(uFrk > 0)
-				box1URL += "_friction";
-			box1URL += ".png";
-			ImageView box1 = new ImageView(new Image(Main.class.getResourceAsStream(box1URL)));
-			ImageView box2 = new ImageView(new Image(Main.class.getResourceAsStream("box2.png")));
+		vGrid.setPadding(new Insets(10));
+		vGrid.setAlignment(Pos.CENTER);
+		vGrid.setHgap(10);
+		vGrid.setVgap(10);
 
-			hBox.getChildren().addAll(box1,box2);
+		Button lAxis = new Button();
+
+		Button rAxis = new Button();
+
+		Label m1 = new Label("m\u2081");
+		Label m2 = new Label("m\u2082");
+
+		Button normalF = new Button(" N ");
+
+		Button mg1 = new Button("m\u2081g");
+
+		Button mg2 = new Button("m\u2082g");
+
+		Button tension1 = new Button(" T\u2081 ");
+
+		Button tension2 = new Button(" T\u2082 ");
+
+		Button friction = new Button(" \u0192\u2096 ");
+
+		Button components = new Button("Components");
+
+		if(!hasAnimated){
+
+			normalF.setDisable(true);
+			mg1.setDisable(true);
+			mg2.setDisable(true);
+			tension1.setDisable(true);
+			tension2.setDisable(true);
+			friction.setDisable(true);
+			components.setDisable(true);
+			lAxis.setDisable(true);
+			rAxis.setDisable(true);
 
 		}
-		else{
-			vStage.setHeight(600);
-			vStage.setWidth(300);
 
-			String box1URL = "box1";
+		vGrid.add(lAxis,0,0);
+		vGrid.add(rAxis,1,0);
+		vGrid.add(m1,0,1);
+		vGrid.add(m2,1,1);
+		vGrid.add(normalF,0,2);
+		vGrid.add(mg1,0,3);
+		vGrid.add(mg2,1,3);
+		vGrid.add(tension1,0,4);
+		vGrid.add(tension2,1,4);
+		vGrid.add(friction,0,5);
+		vGrid.add(components,0,6);
 
-			if(uFrk > 0)
-				box1URL += "_friction";
-
-			box1URL += ".png";
-
-			ImageView box1 = new ImageView(new Image(Main.class.getResourceAsStream(box1URL)));
-
-			hBox.getChildren().addAll(box1);
+		if(!isPulley){
+			tension2.setDisable(true);
+			tension1.setDisable(true);
+			mg2.setDisable(true);
 		}
 
-		vStage.setScene(new Scene(hBox));
+		m1gVector();
+
+		vStage.setScene(new Scene(vGrid));
 		vStage.show();
 
 	}
@@ -1049,7 +1085,22 @@ public class GUI extends Application{
 
 		return x;
 	}
-	
-	
+
+	private void m1gVector(){
+
+		//double startX =
+
+
+	}
+
+	private void normalVector(){
+
+		double startX = getMinBoxX() + (3/2.0)*boxWidth*Math.sin(rAngle);
+
+		double startY = getMaxBoxY() - (boxWidth/2)*Math.sin(rAngle);
+
+
+	}
+
 
 }
