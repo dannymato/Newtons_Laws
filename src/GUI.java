@@ -42,6 +42,10 @@ public class GUI extends Application{
 	private double mAccelH;
 	public static volatile int mSecs;
 	
+	
+	protected static volatile boolean running = false;
+	
+	
 	protected static volatile double pAccel;
 	protected static volatile double pAccelx;
 	protected static volatile double pAccely;
@@ -93,12 +97,33 @@ public class GUI extends Application{
 	
 	private static Polygon rope1;
 	private static Polygon rope2;
+	
+	private static Polygon axis1;
+	private static Polygon axis2;
+	private static Polygon vectorNF;
+	private static Polygon vectorMG1;
+	private static Polygon vectorMG2;
+	private static Polygon vectorT1;
+	private static Polygon vectorT2;
+	private static Polygon vectorF;
+	private static Polygon vectorC1;
+	private static Polygon vectorC2;
 
 	private boolean hasDrawn = false;
 	public static boolean isPulley = true;
 	private static boolean created = false;
 
 	private boolean hasAnimated = false;
+	
+	private boolean showLAX = false;
+	private boolean showRAX = false;
+	private boolean showNF = false;
+	private boolean showMG1 = false;
+	private boolean showMG2 = false;
+	private boolean showT1 = false;
+	private boolean showT2 = false;
+	private boolean showF = false;
+	private boolean showC = false;
 
 	private static Group group;
 	
@@ -138,7 +163,7 @@ public class GUI extends Application{
 		
 		backgroundRectangle.setStroke(Color.BLACK);
 		
-		backgroundRectangle.setFill(Color.CADETBLUE);
+		backgroundRectangle.setFill(Color.LIGHTSKYBLUE);
 		
 		
 		
@@ -176,6 +201,7 @@ public class GUI extends Application{
 			
 			public void handle(ActionEvent event){
 				created = false;
+				running = true;
 				if(hasDrawn){
 					group.getChildren().remove(massRect1);
 					group.getChildren().remove(massRect2);
@@ -186,6 +212,13 @@ public class GUI extends Application{
 					group.getChildren().remove(pulleyPlane);
 					group.getChildren().remove(rope1);
 					group.getChildren().remove(rope2);
+					group.getChildren().remove(vectorNF);
+					group.getChildren().remove(vectorMG1);
+					group.getChildren().remove(vectorF);
+					group.getChildren().remove(vectorT1);
+					group.getChildren().remove(vectorMG2);
+					group.getChildren().remove(vectorT2);
+					
 					restart();
 					xPos = 0;
 					yPos2 = 0;
@@ -765,6 +798,9 @@ public class GUI extends Application{
 		double ropeStartX = pulleyPlane.getCenterX();
 		double ropeStartY = pulleyPlane.getCenterY();
 		
+		
+		
+		
 		if(!isPulley){
 			massRect1 = new Polygon();
 			massRect1.getPoints().addAll(new Double[] {
@@ -873,6 +909,8 @@ public class GUI extends Application{
 				//line.setEndX(massRect1.getLayoutBounds().getMaxX());
 				//line.setEndY(massRect1.getLayoutBounds().getMaxY());
 			}
+			
+			
 		
 
 			Image metal = new Image(Main.class.getResourceAsStream("metal-texture.jpg"));
@@ -882,7 +920,7 @@ public class GUI extends Application{
 
 			massRect1.setStroke(Color.BLACK);
 			
-			massRect3.setFill(Color.CADETBLUE);
+			massRect3.setFill(Color.LIGHTSKYBLUE);
 			
 			rope1.setFill(new ImagePattern(rope));
 			
@@ -928,7 +966,7 @@ public class GUI extends Application{
 		
 			massRect2.setStroke(Color.BLACK);
 			
-			massRect4.setFill(Color.CADETBLUE);
+			massRect4.setFill(Color.LIGHTSKYBLUE);
 			
 			rope2.setFill(new ImagePattern(rope));
 			
@@ -940,6 +978,41 @@ public class GUI extends Application{
 			created = true;
 			
 		}
+		
+//		if(hasAnimated){
+//			if(showNF){
+//				vectorNF = new Polygon();
+//				if(dAngle < 45){
+////					vectorNF.getPoints().addAll(new Double[] {
+////						/*bot Right*/ (botLeftx + topRightx)/2, topRighty + (0.5*(botLefty - topRighty)),
+////						/*bot left*/  rBotLeftx = (botLeftx + topRightx)/2 - (boxWidth * Math.cos(rAngle)), rBotLefty = (topRighty + (0.5*(botLefty - topRighty))) + (boxWidth * Math.sin(rAngle)),
+////						/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
+////						/*top right*/ (botLeftx + topRightx)/2 - (boxHeight * Math.sin(rAngle)), (topRighty + (0.5*(botLefty - topRighty))) - (boxHeight * Math.cos(rAngle))
+////								}
+////							);
+//					
+//					vectorNF.getPoints().addAll(massRect1.getPoints());
+//				
+//				} else {
+//				
+//				}
+////			vectorNF = new Polygon();
+////			vectorNF.getPoints().addAll(new Double[] {
+////					/*bot Right*/ topRightx - 30, topRighty + 30,
+////					/*bot left*/  rBotLeftx = topRightx - (10 * Math.cos(rAngle)) - 30, rBotLefty = topRighty + (10 * Math.sin(rAngle)) + 30,
+////					/*top left*/  rBotLeftx - (boxHeight * Math.sin(rAngle)), rBotLefty - (boxHeight * Math.cos(rAngle)),
+////					/*top right*/ topRightx - (boxHeight * Math.sin(rAngle)) - 30, topRighty - (boxHeight * Math.cos(rAngle)) + 30
+////					}
+////			);
+//			
+//				vectorNF.setFill(Color.RED);
+//			
+//				group.getChildren().add(vectorNF);
+//			//System.exit(0);
+//			}
+//		}
+		
+		
 		
 
 	}
@@ -1015,25 +1088,218 @@ public class GUI extends Application{
 		vGrid.setVgap(10);
 
 		Button lAxis = new Button();
+		lAxis.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				showLAX = !showLAX;
+			}
+			
+		});
 
 		Button rAxis = new Button();
+		rAxis.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if(isPulley){
+					showRAX = !showRAX;
+				}
+			}
+			
+		});
 
 		Label m1 = new Label("m\u2081");
 		Label m2 = new Label("m\u2082");
 
 		Button normalF = new Button(" N ");
+		normalF.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				double privx = (massRect1.getPoints().get(0) - massRect1.getPoints().get(2)) / 1.9;
+				double privy = (massRect1.getPoints().get(3) - massRect1.getPoints().get(1)) / 1.9;
+				
+				vectorNF = new Polygon();
+				vectorNF.getPoints().addAll(new Double[] {
+						massRect1.getPoints().get(0) - privx, massRect1.getPoints().get(1) + privy, //bot right
+						massRect1.getPoints().get(2) + privx, massRect1.getPoints().get(3) - privy,//bot left
+						massRect1.getPoints().get(4) + privx, massRect1.getPoints().get(5) - privy,//top left
+						massRect1.getPoints().get(6) - privx, massRect1.getPoints().get(7) + privy//top right
+				});
+				vectorNF.setLayoutX(massRect1.getLayoutX());
+				vectorNF.setLayoutY(massRect1.getLayoutY());
+				vectorNF.setFill(Color.RED);
+			
+				group.getChildren().add(vectorNF);
+			}
+			
+		});
 
 		Button mg1 = new Button("m\u2081g");
+		mg1.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				double privx = (massRect1.getPoints().get(0) - massRect1.getPoints().get(2)) / 1.9;
+				double privy = (massRect1.getPoints().get(3) - massRect1.getPoints().get(1)) / 1.9;
+				
+				vectorMG1 = new Polygon();
+				vectorMG1.getPoints().addAll(new Double[] {
+						massRect1.getPoints().get(0) - ((massRect1.getPoints().get(0) - massRect1.getPoints().get(4))/2) - 3, massRect1.getPoints().get(3) - ((massRect1.getPoints().get(3) - massRect1.getPoints().get(7))/2) + 100, //bot right
+						massRect1.getPoints().get(0) - ((massRect1.getPoints().get(0) - massRect1.getPoints().get(4))/2) + 3, massRect1.getPoints().get(3) - ((massRect1.getPoints().get(3) - massRect1.getPoints().get(7))/2) + 100,//bot left
+						massRect1.getPoints().get(0) - ((massRect1.getPoints().get(0) - massRect1.getPoints().get(4))/2) + 3, massRect1.getPoints().get(3) - ((massRect1.getPoints().get(3) - massRect1.getPoints().get(7))/2),//top left
+						massRect1.getPoints().get(0) - ((massRect1.getPoints().get(0) - massRect1.getPoints().get(4))/2) - 3, massRect1.getPoints().get(3) - ((massRect1.getPoints().get(3) - massRect1.getPoints().get(7))/2)//top right
+				});
+				vectorMG1.setLayoutX(massRect1.getLayoutX());
+				vectorMG1.setLayoutY(massRect1.getLayoutY());
+				vectorMG1.setFill(Color.BLUE);
+			
+				group.getChildren().add(vectorMG1);
+			}
+			
+		});
 
 		Button mg2 = new Button("m\u2082g");
+		mg2.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if(isPulley){
+					double privx = (massRect2.getPoints().get(0) - massRect2.getPoints().get(2)) / 2;
+					double privy = (massRect2.getPoints().get(3) - massRect2.getPoints().get(5)) / 2;
+					
+					vectorMG2 = new Polygon();
+					vectorMG2.getPoints().addAll(new Double[] {
+							massRect2.getPoints().get(0) - 50 + 3, massRect2.getPoints().get(1) + 50, //bot right
+							massRect2.getPoints().get(2) + 50 - 3, massRect2.getPoints().get(3) + 50,//bot left
+							massRect2.getPoints().get(4) + 50 - 3, massRect2.getPoints().get(5) + 50,//top left
+							massRect2.getPoints().get(6) - 50 + 3, massRect2.getPoints().get(7) + 50//top right
+					});
+					vectorMG2.setLayoutX(massRect2.getLayoutX());
+					vectorMG2.setLayoutY(massRect2.getLayoutY());
+					vectorMG2.setFill(Color.BLUE);
+				
+					group.getChildren().add(vectorMG2);
+				}
+			}
+			
+		});
 
 		Button tension1 = new Button(" T\u2081 ");
+		tension1.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				double privx = (massRect1.getPoints().get(0) - massRect1.getPoints().get(2)) / 1.9;
+				double privy = (massRect1.getPoints().get(3) - massRect1.getPoints().get(1)) / 1.9;
+				
+				vectorT1 = new Polygon();
+				vectorT1.getPoints().addAll(new Double[] {
+						massRect1.getPoints().get(0) + (100*Math.cos(rAngle)) - (35*Math.cos(rAngle)), massRect1.getPoints().get(1) - (100*Math.sin(rAngle)) - (35*Math.cos(rAngle)), //bot right
+						massRect1.getPoints().get(0) - (35*Math.cos(rAngle)), massRect1.getPoints().get(1) - (35*Math.cos(rAngle)),//bot left
+						massRect1.getPoints().get(0) - (3*Math.tan(rAngle)) - (35*Math.cos(rAngle)), massRect1.getPoints().get(1) - 3 - (35*Math.cos(rAngle)),//top left
+						massRect1.getPoints().get(0) + (100*Math.cos(rAngle)) - (3*Math.tan(rAngle)) - (35*Math.cos(rAngle)), massRect1.getPoints().get(1) - (100*Math.sin(rAngle)) - 3 - (35*Math.cos(rAngle))//top right
+				});
+				vectorT1.setLayoutX(massRect1.getLayoutX());
+				vectorT1.setLayoutY(massRect1.getLayoutY());
+				vectorT1.setFill(Color.CORAL);
+			
+				group.getChildren().add(vectorT1);
+			}
+			
+		});
 
 		Button tension2 = new Button(" T\u2082 ");
+		tension2.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if(isPulley){
+					double privx = (massRect2.getPoints().get(0) - massRect2.getPoints().get(2)) / 2;
+					double privy = (massRect2.getPoints().get(3) - massRect2.getPoints().get(5)) / 2;
+					
+					vectorT2 = new Polygon();
+					vectorT2.getPoints().addAll(new Double[] {
+							massRect2.getPoints().get(0) - 50 + 3, massRect2.getPoints().get(1) - 100, //bot right
+							massRect2.getPoints().get(2) + 50 - 3, massRect2.getPoints().get(3) - 100,//bot left
+							massRect2.getPoints().get(4) + 50 - 3, massRect2.getPoints().get(5) - 100,//top left
+							massRect2.getPoints().get(6) - 50 + 3, massRect2.getPoints().get(7) - 100//top right
+					});
+					vectorT2.setLayoutX(massRect2.getLayoutX());
+					vectorT2.setLayoutY(massRect2.getLayoutY());
+					vectorT2.setFill(Color.CORAL);
+				
+					group.getChildren().add(vectorT2);
+				}
+			}
+			
+		});
 
 		Button friction = new Button(" \u0192\u2096 ");
+		friction.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				double privx = (massRect1.getPoints().get(0) - massRect1.getPoints().get(2)) / 1.9;
+				double privy = (massRect1.getPoints().get(3) - massRect1.getPoints().get(1)) / 1.9;
+				
+				vectorF = new Polygon();
+				if(isPulley){
+					if(((mWeight1*Math.sin(rAngle)) >= mWeight2)){
+					
+					
+					
+						vectorF.getPoints().addAll(new Double[] {
+								massRect1.getPoints().get(0) + (100*Math.cos(rAngle)), massRect1.getPoints().get(1) - (100*Math.sin(rAngle)), //bot right
+								massRect1.getPoints().get(0), massRect1.getPoints().get(1),//bot left
+								massRect1.getPoints().get(0) - (3*Math.tan(rAngle)), massRect1.getPoints().get(1) - 3,//top left
+								massRect1.getPoints().get(0) + (100*Math.cos(rAngle)) - (3*Math.tan(rAngle)), massRect1.getPoints().get(1) - (100*Math.sin(rAngle)) - 3//top right
+						});
+					
+					} else {
+						vectorF.getPoints().addAll(new Double[] {
+								massRect1.getPoints().get(2), massRect1.getPoints().get(3), //bot right
+								massRect1.getPoints().get(2) - (100*Math.cos(rAngle)), massRect1.getPoints().get(3) + (100*Math.sin(rAngle)),//bot left
+								massRect1.getPoints().get(2) - (100*Math.cos(rAngle)) - (3*Math.tan(rAngle)), massRect1.getPoints().get(3) + (100*Math.sin(rAngle)) - 3,//top left
+								massRect1.getPoints().get(2) - (100*Math.cos(rAngle)) + (100*Math.cos(rAngle)) - (3*Math.tan(rAngle)), massRect1.getPoints().get(3) + (100*Math.sin(rAngle)) - (100*Math.sin(rAngle)) - 3//top right
+						});
+					}
+				}else {
+					vectorF.getPoints().addAll(new Double[] {
+							massRect1.getPoints().get(0) + (100*Math.cos(rAngle)), massRect1.getPoints().get(1) - (100*Math.sin(rAngle)), //bot right
+							massRect1.getPoints().get(0), massRect1.getPoints().get(1),//bot left
+							massRect1.getPoints().get(0) - (3*Math.tan(rAngle)), massRect1.getPoints().get(1) - 3,//top left
+							massRect1.getPoints().get(0) + (100*Math.cos(rAngle)) - (3*Math.tan(rAngle)), massRect1.getPoints().get(1) - (100*Math.sin(rAngle)) - 3//top right
+					});
+				}
+				vectorF.setLayoutX(massRect1.getLayoutX());
+				vectorF.setLayoutY(massRect1.getLayoutY());
+				vectorF.setFill(Color.GREEN);
+			
+				group.getChildren().add(vectorF);
+			}
+			
+		});
 
 		Button components = new Button("Components");
+		components.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent e) {
+				// TODO Auto-generated method stub
+				showC = !showC;
+			}
+			
+		});
 
 		if(!hasAnimated){
 
@@ -1059,7 +1325,7 @@ public class GUI extends Application{
 		vGrid.add(tension1,0,4);
 		vGrid.add(tension2,1,4);
 		vGrid.add(friction,0,5);
-		vGrid.add(components,0,6);
+		//vGrid.add(components,0,6);
 
 		if(!isPulley){
 			tension2.setDisable(true);

@@ -69,7 +69,7 @@ public class Animator implements Runnable{
 
         }
         
-    	
+    	GUI.running = false;
 //		Platform.runLater(new Runnable() {
 //			@Override
 //			public void run() {
