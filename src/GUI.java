@@ -97,9 +97,7 @@ public class GUI extends Application{
 	
 	private static Polygon rope1;
 	private static Polygon rope2;
-	
-	private static Polygon axis1;
-	private static Polygon axis2;
+
 	private static Polygon vectorNF;
 	private static Polygon vectorMG1;
 	private static Polygon vectorMG2;
@@ -149,6 +147,12 @@ public class GUI extends Application{
 	private static final double boxHeight = 100;
 	private static final double boxWidth = 100;
 
+	private final Image lAxisImg = new Image(Main.class.getResourceAsStream("AxisL.png"));
+	private final Image rAxisImg = new Image(Main.class.getResourceAsStream("AxisR.png"));
+
+	private ImageView axis1;
+	private ImageView axis2;
+
 	public static void main(String[] args){
 		launch(args);
 	}
@@ -197,107 +201,107 @@ public class GUI extends Application{
 		}
 		final Button btn = new Button();
 		btn.setText("Animate");
-		btn.setOnAction(new EventHandler<ActionEvent>(){
-			
-			public void handle(ActionEvent event){
-				created = false;
-				running = true;
-				if(hasDrawn){
-					group.getChildren().remove(massRect1);
-					group.getChildren().remove(massRect2);
-					group.getChildren().remove(massRect3);
-					group.getChildren().remove(massRect4);
-					group.getChildren().remove(line);
-					group.getChildren().remove(plane);
-					group.getChildren().remove(pulleyPlane);
-					group.getChildren().remove(rope1);
-					group.getChildren().remove(rope2);
-					group.getChildren().remove(vectorNF);
-					group.getChildren().remove(vectorMG1);
-					group.getChildren().remove(vectorF);
-					group.getChildren().remove(vectorT1);
-					group.getChildren().remove(vectorMG2);
-					group.getChildren().remove(vectorT2);
-					
-					restart();
-					xPos = 0;
-					yPos2 = 0;
-					yPos1 = 0;
-				}
-				if(startAnimation()){
-					drawRamp(primaryStage);
-					drawBox();
-					if(calculateAcc() == 0){
-							time = 0;
-						}
-						else{
-							time = calculateTime();
-						}
-						Animation animator = new Transition(){
-							{
-								setCycleDuration(Duration.seconds(time));
-								setDelay(Duration.millis(16));
-								System.out.print(time/.016);
-								setOnFinished(new EventHandler<ActionEvent>() {
-									@Override
-									public void handle(ActionEvent actionEvent) {
-										showTime();
-										hasAnimated = true;
-									}
-								});
-								setInterpolator(Interpolator.LINEAR);
+		btn.setOnAction(event -> {
+            created = false;
+            running = true;
+            if(hasDrawn){
+                group.getChildren().remove(massRect1);
+                group.getChildren().remove(massRect2);
+                group.getChildren().remove(massRect3);
+                group.getChildren().remove(massRect4);
+                group.getChildren().remove(line);
+                group.getChildren().remove(plane);
+                group.getChildren().remove(pulleyPlane);
+                group.getChildren().remove(rope1);
+                group.getChildren().remove(rope2);
+                group.getChildren().remove(vectorNF);
+                group.getChildren().remove(vectorMG1);
+                group.getChildren().remove(vectorF);
+                group.getChildren().remove(vectorT1);
+                group.getChildren().remove(vectorMG2);
+                group.getChildren().remove(vectorT2);
+                group.getChildren().remove(axis1);
+                group.getChildren().remove(axis2);
 
-							}
+                restart();
+                xPos = 0;
+                yPos2 = 0;
+                yPos1 = 0;
+            }
+            if(startAnimation()){
+                drawRamp(primaryStage);
+                drawBox();
+                btn.setDisable(true);
+                if(calculateAcc() == 0){
+                        time = 0;
+                    }
+                    else{
+                        time = calculateTime();
+                    }
+                    Animation animator = new Transition(){
+                        {
+                            setCycleDuration(Duration.seconds(time));
+                            setDelay(Duration.millis(16));
+                            System.out.print(time/.016);
+                            setOnFinished(new EventHandler<ActionEvent>() {
+                                @Override
+                                public void handle(ActionEvent actionEvent) {
+                                    showTime();
+                                    hasAnimated = true;
+                                    btn.setDisable(false);
+                                }
+                            });
+                            setInterpolator(Interpolator.LINEAR);
 
-
-							@Override
-							protected void interpolate(double v) {
-								if(getCurrentTime().lessThan(getTotalDuration())) {
-									if(!isPulley) {
-										System.out.println(getCurrentTime());
-										double currTime = getCurrentTime().toSeconds();
-										double x = pAccelx * 0.5 * currTime * currTime;
-										double deltax = x - xPos;
-										xPos = x;
-										moveRect1X(-deltax);
-										double y = pAccely * 0.5 * currTime * currTime;
-										double deltay = y - yPos1;
-										yPos1 = y;
-										moveRect1Y(deltay);
-										System.out.println(getCurrentTime());
-									}
-									else{
-										System.out.println(getCurrentTime());
-										double currTime = getCurrentTime().toSeconds();
-										double x1 = pAccelx * 0.5 * currTime * currTime;
-										double deltax = x1 - xPos;
-										xPos = x1;
-										moveRect1X(-deltax);
-										double y1 = pAccely * 0.5 * currTime * currTime;
-										double deltay1 = y1 - yPos1;
-										yPos1 = y1;
-										moveRect1Y(deltay1);
-
-										double y2 = pAccel * 0.5 * currTime * currTime;
-										double deltay2 = y2 - yPos2;
-										yPos2 = y2;
-										moveRect2Y(-deltay2);
+                        }
 
 
-									}
-								}
+                        @Override
+                        protected void interpolate(double v) {
+                            if(getCurrentTime().lessThan(getTotalDuration())) {
+                                if(!isPulley) {
+                                    System.out.println(getCurrentTime());
+                                    double currTime = getCurrentTime().toSeconds();
+                                    double x = pAccelx * 0.5 * currTime * currTime;
+                                    double deltax = x - xPos;
+                                    xPos = x;
+                                    moveRect1X(-deltax);
+                                    double y = pAccely * 0.5 * currTime * currTime;
+                                    double deltay = y - yPos1;
+                                    yPos1 = y;
+                                    moveRect1Y(deltay);
+                                    System.out.println(getCurrentTime());
+                                }
+                                else{
+                                    System.out.println(getCurrentTime());
+                                    double currTime = getCurrentTime().toSeconds();
+                                    double x1 = pAccelx * 0.5 * currTime * currTime;
+                                    double deltax = x1 - xPos;
+                                    xPos = x1;
+                                    moveRect1X(-deltax);
+                                    double y1 = pAccely * 0.5 * currTime * currTime;
+                                    double deltay1 = y1 - yPos1;
+                                    yPos1 = y1;
+                                    moveRect1Y(deltay1);
+
+                                    double y2 = pAccel * 0.5 * currTime * currTime;
+                                    double deltay2 = y2 - yPos2;
+                                    yPos2 = y2;
+                                    moveRect2Y(-deltay2);
 
 
-							}
-						};
-						animator.play();
+                                }
+                            }
+
+
+                        }
+                    };
+                    animator.play();
 
 
 
-					}
-				}
-
-			}
+                }
+            }
 		);
 		
 		ObservableList<String> options = FXCollections.observableArrayList ("Mass 1", "Weight 1");
@@ -305,26 +309,20 @@ public class GUI extends Application{
 		final ComboBox<String> massCombo = new ComboBox<>(options);
 		massCombo.setValue("Mass 1");
 		
-		massCombo.setOnAction(new EventHandler<ActionEvent>(){
-			
-				public void handle(ActionEvent event){
-					massIndex = massCombo.getSelectionModel().getSelectedIndex();
-					mass1.setPromptText(mUnits[massIndex]);
-				}
-		});
+		massCombo.setOnAction(event -> {
+            massIndex = massCombo.getSelectionModel().getSelectedIndex();
+            mass1.setPromptText(mUnits[massIndex]);
+        });
 		ObservableList<String> options1 = FXCollections.observableArrayList("Mass 2", "Weight 2");
 		final ComboBox<String> massCombo1 = new ComboBox<>(options1);
 		if(isPulley) {
 
 			massCombo1.setValue("Mass 2");
 
-			massCombo1.setOnAction(new EventHandler<ActionEvent>() {
-
-				public void handle(ActionEvent event) {
-					massIndex1 = massCombo1.getSelectionModel().getSelectedIndex();
-					mass2.setPromptText(mUnits[massIndex1]);
-				}
-			});
+			massCombo1.setOnAction(event -> {
+                massIndex1 = massCombo1.getSelectionModel().getSelectedIndex();
+                mass2.setPromptText(mUnits[massIndex1]);
+            });
 		}
 		
 		accel = new TextField();
@@ -350,45 +348,29 @@ public class GUI extends Application{
 		final ComboBox<String> frictionCombo = new ComboBox<>(optionsFriction);
 		frictionCombo.setValue("\u00B5\u2096");
 		
-		frictionCombo.setOnAction(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent event){
-				isKinetic = frictionCombo.getSelectionModel().getSelectedIndex();
-			}
-		});
+		frictionCombo.setOnAction(event -> isKinetic = frictionCombo.getSelectionModel().getSelectedIndex());
 		
 		ObservableList<String> optionsPulley = FXCollections.observableArrayList ("Pulley", "No Pulley");
 		
 		final ComboBox<String> pulleyCombo = new ComboBox<>(optionsPulley);
 		pulleyCombo.setValue("Pulley");
 		
-		pulleyCombo.setOnAction(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent event){
-				if(pulleyCombo.getValue().equals("Pulley")){
-						
-					isPulley = true;
-				} else {
-					isPulley = false;
-					
-				}
-			}
-		});
+		pulleyCombo.setOnAction(event -> isPulley = pulleyCombo.getValue().equals("Pulley"));
 		
 		ObservableList<String> optionsStart = FXCollections.observableArrayList ("Top", "Middle", "Bottom");
 		
 		final ComboBox<String> boxCombo = new ComboBox<>(optionsStart);
 		boxCombo.setValue("Middle");
 		
-		boxCombo.setOnAction(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent event){
-				if(boxCombo.getValue().equals("Top")){
-					heightIndex = 0;
-				} else if(boxCombo.getValue().equals("Middle")){
-					heightIndex = 1;
-				} else {
-					heightIndex = 2;
-				}
-			}
-		});
+		boxCombo.setOnAction(event -> {
+            if(boxCombo.getValue().equals("Top")){
+                heightIndex = 0;
+            } else if(boxCombo.getValue().equals("Middle")){
+                heightIndex = 1;
+            } else {
+                heightIndex = 2;
+            }
+        });
 		
 		final Label pulleyField = new Label();
 		pulleyField.setText("Use a Pulley?");
@@ -398,59 +380,57 @@ public class GUI extends Application{
 		final ComboBox<String> comboPulley = new ComboBox<>(opIsPulley);
 		comboPulley.setValue("Yes");
 		
-		comboPulley.setOnAction(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent event){
-				if(comboPulley.getValue().equals("Yes")){
-					isPulley = true;
-					mass2 = new TextField();
-					mass2.setPromptText("kg");
-					grid.getChildren().clear();
-					grid.add(newton,0,0,2,3);
-					grid.add(mass1, 1, 3);
-					grid.add(massCombo, 0, 3);
-					grid.add(mass2, 1, 4);
-					grid.add(massCombo1, 0, 4);
-					grid.add(accel, 1, 5);
-					grid.add(tAccel, 0, 5);
-					grid.add(tAngle, 0, 6);
-					grid.add(angle, 1, 6);
-					grid.add(tLength, 0, 7);
-					grid.add(length, 1, 7);
-					grid.add(frictionCombo, 0, 8);
-					grid.add(friction, 1, 8);
-					//grid.add(pulleyCombo, 0, 9);
-					//grid.add(pulley, 1, 9);
-					grid.add(btn, 1, 9);
-					grid.add(timeField,1,10);
-					grid.add(boxCombo, 0, 11);
-					grid.add(pulleyField, 0, 12);
-					grid.add(comboPulley, 1, 12);
+		comboPulley.setOnAction(event -> {
+            if(comboPulley.getValue().equals("Yes")){
+                isPulley = true;
+                mass2 = new TextField();
+                mass2.setPromptText("kg");
+                grid.getChildren().clear();
+                grid.add(newton,0,0,2,3);
+                grid.add(mass1, 1, 3);
+                grid.add(massCombo, 0, 3);
+                grid.add(mass2, 1, 4);
+                grid.add(massCombo1, 0, 4);
+                grid.add(accel, 1, 5);
+                grid.add(tAccel, 0, 5);
+                grid.add(tAngle, 0, 6);
+                grid.add(angle, 1, 6);
+                grid.add(tLength, 0, 7);
+                grid.add(length, 1, 7);
+                grid.add(frictionCombo, 0, 8);
+                grid.add(friction, 1, 8);
+                //grid.add(pulleyCombo, 0, 9);
+                //grid.add(pulley, 1, 9);
+                grid.add(btn, 1, 9);
+                grid.add(timeField,1,10);
+                grid.add(boxCombo, 0, 11);
+                grid.add(pulleyField, 0, 12);
+                grid.add(comboPulley, 1, 12);
 
-					grid.add(vector,0,9);
-				} else {
-					isPulley = false;
-					grid.getChildren().clear();
-					grid.add(newton,0,0,2,3);
-					grid.add(mass1, 1, 3);
-					grid.add(massCombo, 0, 3);
-					grid.add(accel, 1, 4);
-					grid.add(tAccel, 0, 4);
-					grid.add(tAngle, 0, 5);
-					grid.add(angle, 1, 5);
-					grid.add(tLength, 0, 6);
-					grid.add(length, 1, 6);
-					grid.add(frictionCombo, 0, 7);
-					grid.add(friction, 1, 7);
-					//grid.add(pulleyCombo, 0, 8);
-					//grid.add(pulley, 1, 8);
-					grid.add(btn, 1, 9);
-					grid.add(timeField,1,10);
-					grid.add(pulleyField, 0, 12);
-					grid.add(comboPulley, 1, 12);
-					grid.add(vector,0,8);
-				}
-			}
-		});
+                grid.add(vector,0,9);
+            } else {
+                isPulley = false;
+                grid.getChildren().clear();
+                grid.add(newton,0,0,2,3);
+                grid.add(mass1, 1, 3);
+                grid.add(massCombo, 0, 3);
+                grid.add(accel, 1, 4);
+                grid.add(tAccel, 0, 4);
+                grid.add(tAngle, 0, 5);
+                grid.add(angle, 1, 5);
+                grid.add(tLength, 0, 6);
+                grid.add(length, 1, 6);
+                grid.add(frictionCombo, 0, 7);
+                grid.add(friction, 1, 7);
+                //grid.add(pulleyCombo, 0, 8);
+                //grid.add(pulley, 1, 8);
+                grid.add(btn, 1, 9);
+                grid.add(timeField,1,10);
+                grid.add(pulleyField, 0, 12);
+                grid.add(comboPulley, 1, 12);
+                grid.add(vector,0,8);
+            }
+        });
 		
 		
 		
@@ -459,13 +439,7 @@ public class GUI extends Application{
 		timeField = new Label();
 
 		vector = new Button("Vector Controls");
-		vector.setOnAction(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent actionEvent) {
-				showVectors();
-			}
-		});
-		
+		vector.setOnAction(actionEvent -> showVectors());
 		
 		if(isPulley) {
 			grid.add(newton,0,0,2,3);
@@ -513,12 +487,7 @@ public class GUI extends Application{
 			grid.add(vector,0,8);
 		}
 		
-		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-
-			public void handle(WindowEvent e){
-				Platform.exit();
-			}
-		});
+		primaryStage.setOnCloseRequest(e -> Platform.exit());
 
 
 
@@ -1088,25 +1057,90 @@ public class GUI extends Application{
 		vGrid.setVgap(10);
 
 		Button lAxis = new Button();
+		lAxis.setGraphic(new ImageView(new Image(Main.class.getResourceAsStream("AxisL.png"),50,50,true,true)));
 		lAxis.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
 			public void handle(ActionEvent e) {
 				// TODO Auto-generated method stub
+				if(!showLAX){
+					if(showRAX) {
+						showRAX = false;
+						axis1.toBack();
+						group.getChildren().remove(axis1);
+						if(isPulley){
+							axis2.toBack();
+							group.getChildren().remove(axis2);
+						}
+					}
+
+					axis1 = new ImageView(new Image(Main.class.getResourceAsStream("AxisL.png"),100,100,true,true));
+					axis1.setLayoutX(getMinBoxX()-50);
+					axis1.setLayoutY(getMinBoxY() - 150);
+					axis1.setRotate(-dAngle);
+					group.getChildren().add(axis1);
+
+					if(isPulley){
+						axis2 = new ImageView(new Image(Main.class.getResourceAsStream("AxisL.png"),100,100,true,true));
+						axis2.setLayoutX(pulleyCenterX + 100);
+						axis2.setLayoutY(pulleyCenterY - 50);
+						axis2.setRotate(90.0);
+						group.getChildren().add(axis2);
+					}
+
+
+				}
+				else{
+					System.out.println("Remove axis");
+					axis1.toBack();
+					axis2.toBack();
+					group.getChildren().remove(axis1);
+					group.getChildren().remove(axis2);
+				}
 				showLAX = !showLAX;
 			}
 			
 		});
 
 		Button rAxis = new Button();
+		rAxis.setGraphic(new ImageView(new Image(Main.class.getResourceAsStream("AxisR.png"),50,50,true,true)));
 		rAxis.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
 			public void handle(ActionEvent e) {
 				// TODO Auto-generated method stub
-				if(isPulley){
-					showRAX = !showRAX;
+				if (!showRAX) {
+					if (showLAX) {
+						showLAX = false;
+						group.getChildren().remove(axis1);
+						if(isPulley){
+							axis2.toBack();
+							group.getChildren().remove(axis2);
+						}
+					}
+
+					axis1 = new ImageView(new Image(Main.class.getResourceAsStream("AxisR.png"), 100, 100, true, true));
+					axis1.setLayoutX(getMinBoxX() - 50);
+					axis1.setLayoutY(getMinBoxY() - 150);
+					axis1.setRotate(-dAngle);
+					group.getChildren().add(axis1);
+
+					if(isPulley){
+						axis2 = new ImageView(new Image(Main.class.getResourceAsStream("AxisR.png"),100,100,true,true));
+						axis2.setLayoutX(pulleyCenterX + 100);
+						axis2.setLayoutY(pulleyCenterY - 50);
+						axis2.setRotate(90.0);
+						group.getChildren().add(axis2);
+					}
+
+				} else {
+					System.out.println("Remove axis");
+					axis1.toBack();
+					axis2.toBack();
+					group.getChildren().remove(axis1);
+					group.getChildren().remove(axis2);
 				}
+				showRAX = !showRAX;
 			}
 			
 		});
@@ -1333,8 +1367,6 @@ public class GUI extends Application{
 			mg2.setDisable(true);
 		}
 
-		m1gVector();
-
 		vStage.setScene(new Scene(vGrid));
 		vStage.show();
 
@@ -1350,22 +1382,6 @@ public class GUI extends Application{
 		}
 
 		return x;
-	}
-
-	private void m1gVector(){
-
-		//double startX =
-
-
-	}
-
-	private void normalVector(){
-
-		double startX = getMinBoxX() + (3/2.0)*boxWidth*Math.sin(rAngle);
-
-		double startY = getMaxBoxY() - (boxWidth/2)*Math.sin(rAngle);
-
-
 	}
 
 
