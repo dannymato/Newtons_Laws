@@ -1,3 +1,7 @@
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.Transition;
@@ -18,38 +22,37 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import javafx.util.Duration;
-
-import java.util.ArrayList;
 
 public class GUI extends Application{
 	
-	private double mWeight1;
-	private double mWeight2;
-	private double mAccelG;
-	private double mLength;
-	private static double uFrk;
-	private double dAngle;
-	protected static double rAngle;
-	private double mAccelH;
+	private double mWeight1 = 0;
+	private double mWeight2 = 0;
+	private double mAccelG = 0;
+	private double mLength = 0;
+	private static double uFrk = 0;
+	private double dAngle = 0;
+	protected static double rAngle = 0;
+	private double mAccelH = 0;
 	public static volatile int mSecs;
 	
 	
 	protected static volatile boolean running = false;
 	
 	
-	protected static volatile double pAccel;
-	protected static volatile double pAccelx;
-	protected static volatile double pAccely;
+	protected static volatile double pAccel = 0;
+	protected static volatile double pAccelx = 0;
+	protected static volatile double pAccely = 0;
 
 	private int isKinetic = 0;
 	
@@ -62,6 +65,21 @@ public class GUI extends Application{
 	private TextField length;
 	private TextField friction;
 	private TextField pulley;
+	
+	private Text m1Text;
+	private Text angleText;
+	private Text m2Text;
+	private Text frictionText;
+	private Text m1Text2;
+	private Text angleText2;
+	private Text netForceText;
+	private Text netForceText2;
+	private Text m1Text3;
+	private Text m2Text3;
+	private Text accelerationText;
+	private Text xText;
+	private Text accelerationText2;
+	private Text timeText;
 
 	private Button vector;
 
@@ -1401,16 +1419,82 @@ public class GUI extends Application{
 	}
 
 	private void openSolvingPage(){
+		
+		/*
+		 * private TextField m1Text;
+	private TextField angleText;
+	private TextField m2Text;
+	private TextField frictionText;
+	private TextField m1Text2;
+	private TextField angleText2;
+	private TextField netForceText;
+	private TextField netForceText2;
+	private TextField m1Text3;
+	private TextField m2Text3;
+	private TextField accelerationText;
+	private TextField xText;
+	private TextField accelerationText2;
+	private TextField timeText;
+		 * 
+		 */
+		
+		DecimalFormat df = new DecimalFormat("#.#");
+		df.setRoundingMode(RoundingMode.DOWN);
 
 		Stage stage = new Stage();
 
-		VBox vBox = new VBox();
+		Pane vBox = new Pane();
 
 		Image image = new Image(Main.class.getResourceAsStream("Solving Page.png"));
 
 		ImageView imageView = new ImageView(image);
-
+		
+		m1Text = new Text(130, 120, String.valueOf(df.format((mWeight1/mAccelG))));
+		m1Text.setFont(Font.font("Verdana", 15));
+		angleText = new Text(240, 120, String.valueOf(df.format(this.dAngle)));
+		angleText.setFont(Font.font("Verdana", 15));
+		m2Text = new Text(315, 120, String.valueOf(df.format(mWeight2/mAccelG)));
+		m2Text.setFont(Font.font("Verdana", 15));
+		frictionText = new Text(405, 120, String.valueOf(df.format(this.uFrk)));
+		frictionText.setFont(Font.font("Verdana", 15));
+		m1Text2 = new Text(450, 120, String.valueOf(df.format((mWeight1/mAccelG))));
+		m1Text2.setFont(Font.font("Verdana",15));
+		angleText2 = new Text(550, 120, String.valueOf(df.format(this.dAngle)));
+		angleText2.setFont(Font.font("Verdana",15));
+		netForceText = new Text(300, 180, (df.format( ((mWeight1/mAccelG)*(mAccelG)*(Math.sin(dAngle*0.0174533))) - ((mWeight2/mAccelG)*(mAccelG)) - ((this.uFrk)*(mWeight1/mAccelG)*(mAccelG)*(Math.cos(dAngle*0.0174533)))    )));
+		netForceText.setFont(Font.font("Verdana", 15));
+		netForceText2 = new Text(305, 475, (df.format( ((mWeight1/mAccelG)*(mAccelG)*(Math.sin(dAngle*0.0174533))) - ((mWeight2/mAccelG)*(mAccelG)) - ((this.uFrk)*(mWeight1/mAccelG)*(mAccelG)*(Math.cos(dAngle*0.0174533)))    )));
+		netForceText2.setFont(Font.font("Verdana", 15));
+		m1Text3 = new Text(260, 525, String.valueOf(df.format((mWeight1/mAccelG))));
+		m1Text3.setFont(Font.font("Verdana",15));
+		m2Text3 = new Text(355, 525, String.valueOf(df.format(mWeight2/mAccelG)));
+		m2Text3.setFont(Font.font("Verdana", 15));
+		//accelerationText = new Text(305, 590, String.valueOf(df.format( (((mWeight1/mAccelG)*(mAccelG)*(Math.sin(dAngle*0.0174533))) - ((mWeight2/mAccelG)*(mAccelG)) - ((this.uFrk)*(mWeight1/mAccelG)*(mAccelG)*(Math.cos(dAngle*0.0174533))))/( (mWeight1/mAccelG) + (mWeight2/mAccelG)    )      )));
+		accelerationText = new Text(305, 590, String.valueOf(df.format(pAccel)));
+		accelerationText.setFont(Font.font("Verdana", 15));
+		xText = new Text(320, 825, String.valueOf(df.format(mLength)));
+		xText.setFont(Font.font("Verdana", 15));
+		accelerationText2 = new Text(290, 870, String.valueOf(df.format(pAccel)));
+		accelerationText2.setFont(Font.font("Verdana", 15));
+		timeText = new Text(420, 847, String.valueOf(df.format(this.time)));
+		timeText.setFont(Font.font("Verdana", 15));
+		
 		vBox.getChildren().add(imageView);
+		vBox.getChildren().add(m1Text);
+		vBox.getChildren().add(angleText);
+		vBox.getChildren().add(m2Text);
+		vBox.getChildren().add(frictionText);
+		vBox.getChildren().add(m1Text2);
+		vBox.getChildren().add(angleText2);
+		vBox.getChildren().add(netForceText);
+		vBox.getChildren().add(netForceText2);
+		vBox.getChildren().add(m1Text3);
+		vBox.getChildren().add(m2Text3);
+		vBox.getChildren().add(accelerationText);
+		vBox.getChildren().add(xText);
+		vBox.getChildren().add(accelerationText2);
+		vBox.getChildren().add(timeText);
+
 
 		stage.setScene(new Scene(vBox));
 		stage.show();
