@@ -18,6 +18,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
@@ -371,6 +372,14 @@ public class GUI extends Application{
                 heightIndex = 2;
             }
         });
+
+		Button solutionButton = new Button("Solutions");
+		solutionButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				openSolvingPage();
+			}
+		});
 		
 		final Label pulleyField = new Label();
 		pulleyField.setText("Use a Pulley?");
@@ -379,6 +388,7 @@ public class GUI extends Application{
 		
 		final ComboBox<String> comboPulley = new ComboBox<>(opIsPulley);
 		comboPulley.setValue("Yes");
+
 		
 		comboPulley.setOnAction(event -> {
             if(comboPulley.getValue().equals("Yes")){
@@ -408,6 +418,7 @@ public class GUI extends Application{
                 grid.add(comboPulley, 1, 12);
 
                 grid.add(vector,0,9);
+				grid.add(solutionButton, 1,11);
             } else {
                 isPulley = false;
                 grid.getChildren().clear();
@@ -429,6 +440,7 @@ public class GUI extends Application{
                 grid.add(pulleyField, 0, 12);
                 grid.add(comboPulley, 1, 12);
                 grid.add(vector,0,8);
+				grid.add(solutionButton, 1,11);
             }
         });
 		
@@ -440,6 +452,8 @@ public class GUI extends Application{
 
 		vector = new Button("Vector Controls");
 		vector.setOnAction(actionEvent -> showVectors());
+
+
 		
 		if(isPulley) {
 			grid.add(newton,0,0,2,3);
@@ -463,6 +477,7 @@ public class GUI extends Application{
 			grid.add(pulleyField, 0, 12);
 			grid.add(comboPulley, 1, 12);
 			grid.add(vector,0,9);
+			grid.add(solutionButton, 1,11);
 		}
 		else{
 			grid.add(newton,0,0,2,3);
@@ -485,6 +500,7 @@ public class GUI extends Application{
 			grid.add(btn, 1, 8);
 			grid.add(timeField,1,9);
 			grid.add(vector,0,8);
+			grid.add(solutionButton,1,11);
 		}
 		
 		primaryStage.setOnCloseRequest(e -> Platform.exit());
@@ -1382,6 +1398,22 @@ public class GUI extends Application{
 		}
 
 		return x;
+	}
+
+	private void openSolvingPage(){
+
+		Stage stage = new Stage();
+
+		VBox vBox = new VBox();
+
+		Image image = new Image(Main.class.getResourceAsStream("Solving Page.png"));
+
+		ImageView imageView = new ImageView(image);
+
+		vBox.getChildren().add(imageView);
+
+		stage.setScene(new Scene(vBox));
+		stage.show();
 	}
 
 
